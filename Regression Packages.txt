@@ -4,7 +4,7 @@ Regressions package/source code R:
 - Elastic Net ->
 - Adaptive Lasso ->
 - Adaptive Elastic Net ->
-- PC ->
+- PC -> Code beschikbaar
 - WPC ->
 - SPC ->
 - LA(PC) ->
