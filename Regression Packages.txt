@@ -1,0 +1,23 @@
+Regressions package/source code R:
+- Lasso ->
+- Rigdge ->
+- Elastic Net ->
+- Adaptive Lasso ->
+- Adaptive Elastic Net ->
+- PC ->
+- WPC ->
+- SPC ->
+- LA(PC) ->
+- PAM ->
+
+Regression package/source code python:
+- Lasso ->
+- Rigdge ->
+- Elastic Net ->
+- Adaptive Lasso ->
+- Adaptive Elastic Net ->
+- PC ->
+- WPC ->
+- SPC ->
+- LA(PC) ->
+- PAM ->
