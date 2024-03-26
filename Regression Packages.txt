@@ -11,7 +11,7 @@ Regressions package/source code R:
 - PAM ->
 
 Regression package/source code python:
-- Lasso ->
+- Lasso -> 
 - Rigdge ->
 - Elastic Net ->
 - Adaptive Lasso ->
