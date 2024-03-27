@@ -39,7 +39,7 @@ y = test_data_row['RPI'].values[0]
 # %%
 
 def MSE(coef, data, y, intercept):
-    y_bar = 0
+    y_bar = intercept
     for i in range(np.shape(coef)[0]):
         y_bar += coef[i] * data[i]
 
