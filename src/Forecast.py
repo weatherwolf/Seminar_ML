@@ -2,7 +2,7 @@ import pandas as pd
 import numpy as np
 
 from src.Dataprocessor import *
-from src.ModelTrainer import *
+from src.Model import *
 
 class Forecast:
 
@@ -21,7 +21,7 @@ class Forecast:
         return (y-y_bar)*(y-y_bar)
     
     
-    def RollingWindow(self, dependentVariable, model: linear_model):
+    def RollingWindow(self, dependentVariable, model, data=None):
         totalError = 0
         numberOfWindows = 0
 
@@ -33,7 +33,7 @@ class Forecast:
             numberOfWindows += 1
             print(f"beginTime: {beginTime}, endTime: {endTime}")
 
-            [x_train, y_train, x_test, y_test] = self.dataProcessor.CreateDataSet(dependentVariable=dependentVariable)
+            [x_train, y_train, x_test, y_test] = self.dataProcessor.CreateDataSet(dependentVariable=dependentVariable, beginTime=beginTime, endTime=endTime)
             model.fit(x_train, y_train)
             coef = model.coef_
             intercept = model.intercept_
@@ -46,7 +46,7 @@ class Forecast:
         return totalError/numberOfWindows
     
     
-    def TuningForecast(self, dependentVariable, coef, intercept):
+    def TuningForecast(self, dependentVariable, model, lambdaList, alphaList):
         totalError = 0
         numberOfWindows = 0
          
@@ -56,15 +56,24 @@ class Forecast:
         # endTime is calculated as in the paper, under "Tuning", page 411
         endTime = beginTime + (2/3) * (lastTime - beginTime)
 
+        #Help: Maybe want to create a for loop here to loop over all the possible lambda and alpha, and get some results
+        [x_train, y_train, x_test, y_test] = self.dataProcessor.CreateDataSet(dependentVariable=dependentVariable)
+        model.fit(x_train, y_train)
+        coef = model.coef_
+        intercept = model.intercept_
+
         data = self.dataProcessor.CreateDataSet(dependentVariable=dependentVariable, beginTime=beginTime, endTime=endTime)
 
-        while(endTime + pd.DateOffset(months=1) < lastTime):
+        while(endTime + pd.DateOffset(months=1) <= lastTime):
 
             endTime + pd.DateOffset(months=1)
             numberOfWindows += 1
 
-            x_test = data.drop(columns=[dependentVariable, 'sasdate'])
-            y_test = data[dependentVariable].values[0]
+            extraMonth = endTime + pd.DateOffset(months=1)
+            data_period = self.data[(self.data['sasdate'] < extraMonth) & (self.data['sasdate'] >= endTime)]
+
+            x_test = data_period.drop(columns=[dependentVariable, 'sasdate'])
+            y_test = data_period[dependentVariable].values[0]
 
             totalError += self.MSE(x=x_test, y=y_test, coef=coef, intercept=intercept)
 
