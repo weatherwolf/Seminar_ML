@@ -95,7 +95,30 @@ class DataProcessor:
 
         self.data_non_stat = data
 
+    """
 
+    Method used to split the dataset in w and x variables
+
+    """
+    def SplitDataSet(self, data):
+
+        names = []
+
+        data_w = None
+        data_x = None
+        pass
+
+
+    """
+    
+    Method used to merge the w and x variables
+    
+    """
+    def MergeDataSet(self, data_w, data_x):
+
+        data = pd.merge(data_w, data_x)
+
+        return data
 
     """
 
@@ -104,7 +127,7 @@ class DataProcessor:
     - endTime: end time period of the dataset to be created (not included)
     - toInclude: list of variables that should be included. If this list is empty, than all variables of the dataset are included
     - cleaned: boolean whether the dataset is non_stationary of not. True means non_stationary data, False means original data
-    
+
     """
     def CreateDataSet(self, dependentVariable, beginTime=None, endTime=None, toInclude=None, cleaned=False):
 
@@ -140,9 +163,13 @@ class DataProcessor:
         return [x_train, y_train, x_test, y_test]
     
         
-    def PCestimation(self, k=30):
+    def PCestimation(self, k=30, sparse=False):
 
-        pca = decomposition.PCA(n_components=k)
+        if sparse:
+            pca = decomposition.SparsePCA(n_components=k)
+        else:
+            pca = decomposition.PCA(n_components=k)
+
         data = self.data_non_stat.drop(columns=['sasdate']) 
         scaled_data = pd.DataFrame(preprocessing.scale(data), columns=data.columns)
 
@@ -152,19 +179,82 @@ class DataProcessor:
         sorted_scores = scores.abs().sort_values(ascending=False)
         top_k_vars = sorted_scores[0:k].index.values
         
-        per_var = np.round(pca.explained_variance_ratio_* 100, decimals=1)
+        if not sparse:
+            per_var = np.round(pca.explained_variance_ratio_* 100, decimals=1)
+            print(f"sum of total explained variance for the {k} biggest variables: {np.round(sum(per_var), 2)}%")
 
-        # labels = ['PC' + str(x) for x in range(1, len(per_var)+1)]
-        
-        # plt.bar(x=range(1,len(per_var)+1), height=per_var, tick_label=labels)
-        # plt.ylabel('Percentage of Explained Variance')
-        # plt.xlabel('Principal Component')
-        # plt.title('Scree Plot')
-        # plt.show()
+            # labels = ['PC' + str(x) for x in range(1, len(per_var)+1)]
+            
+            # plt.bar(x=range(1,len(per_var)+1), height=per_var, tick_label=labels)
+            # plt.ylabel('Percentage of Explained Variance')
+            # plt.xlabel('Principal Component')
+            # plt.title('Scree Plot')
+            # plt.show()
 
-        print(f"sum of total explained variance for the {k} biggest variables: {np.round(sum(per_var), 2)}%")
-        
         return top_k_vars
+    
+    def RemoveOutliers(self):
+
+        # removes outliers based on the description of FRED-MD (dunno if it's the best), Stock&Watson (2002) also uses this definition
+
+        data = self.data_stat # check for outliers in the transformed data !
+
+        for column in data.columns:
+            if column == 'sasdate':
+                continue
+
+            median = column.median()
+            q1 = column.quantile(0.25)
+            q3 = column.quantile(0.75)
+            iqr = q3 - q1
+            lower_bound = median - 5 * iqr
+            upper_bound = median + 5 * iqr
+            data[column] = column.where((column >= lower_bound) | (column <= upper_bound), np.nan)
+
+        self.data_stat = data # stat data replaced with stat data where outliers removed
+    
+
+    # def EMapproach(self):
+    #     data = self.data_stat
+    #     balanced_panel =  self.CreateBalancedPanel()
+    #     [factors, laodings] = self.EMapproachPC(balanced_panel)
+
+    #     factors 
+
+    # def EMapproachPC (self, panel, k=30): # have to change k
+    #     pca = decomposition.PCA(n_components=k)
+    #     data = panel.drop(columns=['sasdate']) 
+    #     scaled_data = pd.DataFrame(preprocessing.scale(data), columns=data.columns)
+
+    #     factors = pca.fit_transform(scaled_data)
+    #     loadings = pca.components_.T
+        
+    #     return [factors, loadings]
+
+    # def CreateBalancedPanel(self):
+    #     name = self.name
+    #     data = self.data_stat # use transformed data (already misses first two observations!! so starts march 1959)
+
+    #     if name == '2015-07.csv' # have to look into what the balanced panel is for 2024-02, but can use the same panel maybe
+    #         data =  data[(data['sasdata'] >= '1960-01-01') & (data['sasdata'] <= '2014-12-31')] # adjust sample period
+        
+    #         data = data.dropna(axis=1) # drop the columns that still have missing values (series 64, 66, 101, and 130)
+
+    #     return data
+    
+    def ImputeNaN(self):
+        # Perform mean imputation for the missing values
+
+        data = self.data_stat
+
+        for column in data.columns:
+            if column == 'sasdate':
+                continue
+
+            mean =  data[column].mean(skipna = True)
+            data[column] = data[column].fillna(mean)
+
+        self.data_stat = data
 
     
     

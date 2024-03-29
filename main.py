@@ -2,7 +2,9 @@
 from src.Dataprocessor import DataProcessor
 from src.Forecast import Forecast
 from src.Model import Model
+from src.Tuning import Tuning
 
+import statsmodels.api as sm
 import pandas as pd
 import numpy as np
 
@@ -27,19 +29,18 @@ name = '2015-07.csv'
 # %%
 dataProcessor = DataProcessor(beginTime=beginTime, endTime=endTime, data=pd.read_csv(name), name=name)
 data = dataProcessor.data
-data_non_stat = dataProcessor.data_non_stat
+data_stat = dataProcessor.data_non_stat
 
 lambdaList = [10 ** i for i in range(-10, 4)]
 alphaList = [0.1 * i for i in range(1,10)]
 
 # %%
 
-# l_best = 0
-# alpha_best = 0
+l_best = 0
+alpha_best = 0
 
-# for l in lambdaList:
-#     for a in alphaList:
-#         trainer = Model(alpha=l, l1_ratio=a)
+lambdaList = [np.log(i/10) for i in range(1,20)]
+alphaList = [i/10 for i in range(1,10)]
 
 # %%
 """
@@ -51,13 +52,21 @@ You have choice between the following parameters for Model:
 
 """
 dependentVar = 'RPI'
-k = 30 #Number of variables wanted in pca
+k = 10 #Number of variables wanted in pca
 
-trainer = Model(max_iter=1000, alpha=1, l1_ratio=0.5)
+
+# %%
+
+tuner = Tuning(data=data_stat, dependentVariable=dependentVar, dataProcessor=dataProcessor, lambdaList=lambdaList, alphaList=alphaList)
+lags = tuner.TuningLags()
+
+trainer = Model(max_iter=1000, alpha=1, l1_ratio=0.5, num_lags=lags)
 lasso = trainer.model("Lasso")
 ridge = trainer.model("Ridge")
 elasticNet = trainer.model("ElasticNet")
 pca = trainer.model("PCA")
+spca = trainer.model("SPCA")
+ar = trainer.model("AR")
 
 forecaster = Forecast(data=data, dataProcessor=dataProcessor)
 
@@ -65,14 +74,21 @@ error_Lasso = forecaster.RollingWindow(dependentVar, lasso)
 error_Ridge = forecaster.RollingWindow(dependentVar, ridge)
 error_ElasticNet = forecaster.RollingWindow(dependentVar, elasticNet)
 
-PCAVariables = dataProcessor.PCestimation(k=k)
-error_PCA = forecaster.RollingWindow(dependentVar, pca, PCAVariables)
+PCAVariables = dataProcessor.PCestimation(k=k, sparse=False)
+SPCAVariables = dataProcessor.PCestimation(k=k, sparse=True)
 
-# %%
+error_PCA = forecaster.RollingWindow(dependentVar, pca, PCAVariables)
+error_SPCA = forecaster.RollingWindow(dependentVar, spca, SPCAVariables)
+
+error_AR = forecaster.RollingWindow(dependentVar, ar)
+
 # %%
 print(f"Lasso MSE over rolling window is: {error_Lasso}")
 print(f"Ridge MSE over rolling window is: {error_Ridge}")
 print(f"Elastic Net MSE over rolling window is: {error_ElasticNet}")
 print(f"PCA MSE over rolling window is: {error_PCA}")
+print(f"SPCA MSE over rolling window is: {error_SPCA}")
+print(f"AR MSE over rolling window is: {error_AR}")
+
 
 # %%
