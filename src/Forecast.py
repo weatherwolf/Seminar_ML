@@ -17,7 +17,6 @@ class Forecast:
         for i in range(np.shape(coef)[0]):
             y_bar += x.values[0][i] * coef[i]
 
-        # print(f"y-y_bar = {y} - {y_bar}")
         return (y-y_bar)*(y-y_bar)
     
     
@@ -33,8 +32,8 @@ class Forecast:
             numberOfWindows += 1
             # print(f"beginTime: {beginTime}, endTime: {endTime}")
 
-            [x_train_non_stat, y_train_non_stat, x_test_non_stat, y_test_non_stat] = self.dataProcessor.CreateDataSet(dependentVariable=dependentVariable, beginTime=beginTime, endTime=endTime, toInclude=toInclude, cleaned=True)
-            [x_train_stat, y_train_stat, x_test_stat, y_test_stat] = self.dataProcessor.CreateDataSet(dependentVariable=dependentVariable, beginTime=beginTime, endTime=endTime, toInclude=toInclude, cleaned=False)
+            [x_train_stat, y_train_stat, x_test_stat, y_test_stat] = self.dataProcessor.CreateDataSet(dependentVariable=dependentVariable, beginTime=beginTime, endTime=endTime, toInclude=toInclude, cleaned=True)
+            [x_train_non_stat, y_train_non_stat, x_test_non_stat, y_test_non_stat] = self.dataProcessor.CreateDataSet(dependentVariable=dependentVariable, beginTime=beginTime, endTime=endTime, toInclude=toInclude, cleaned=False)
 
             if isinstance(model, int): # For AR, I give the number of lags instead of the model, since giving the model doens't work
                 
@@ -43,15 +42,11 @@ class Forecast:
                 intercept = results.params[0]
 
             else:
-                model.fit(x_train_non_stat, y_train_non_stat)
-                coef = model.coef_
+                model.fit(x_train_stat, y_train_stat)
+                coef = model.coef_s
                 intercept = model.intercept_
             
-
-            # To check whether the x_test and y_test are from the original or non-stationary dataset
-            # print(x_test)
-            # print(y_test)
-            totalError += self.MSE(y_test_non_stat, x_test_non_stat, coef, intercept)
+            totalError += self.MSE(y_test_stat, x_test_stat, coef, intercept)
 
             endTime = endTime + pd.DateOffset(months=1)
             beginTime = beginTime + pd.DateOffset(months=1)

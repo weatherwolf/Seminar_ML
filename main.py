@@ -26,10 +26,15 @@ beginTime = pd.Timestamp('1990-01-01')
 endTime = pd.Timestamp('2000-01-01')
 name = '2015-07.csv'
 
+dependentVar = 'RPI'
+k = 10 #Number of variables wanted in pca
+
 # %%
 dataProcessor = DataProcessor(beginTime=beginTime, endTime=endTime, data=pd.read_csv(name), name=name)
 data = dataProcessor.data
-data_stat = dataProcessor.data_non_stat
+data_stat = dataProcessor.data_stat
+
+[data_w, data_x] = dataProcessor.SplitDataSet(data, dependentVariable=dependentVar, name=name)
 
 lambdaList = [10 ** i for i in range(-10, 4)]
 alphaList = [0.1 * i for i in range(1,10)]
@@ -51,8 +56,6 @@ You have choice between the following parameters for Model:
 - ElasticNet -> change lambda (alpha), alpha (l1_ratio) and max_iter
 
 """
-dependentVar = 'RPI'
-k = 10 #Number of variables wanted in pca
 
 
 # %%

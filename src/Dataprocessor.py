@@ -9,9 +9,9 @@ class DataProcessor:
     
     This class is used to manipulate data sets we are going to use
 
-    Note: we have a self.data and a self.data_non_stat
+    Note: we have a self.data and a self.data_stat
     The self.data is just meant to represent the data as how it is given to us
-    The self.data_non_stat is meant ot represent the non-stationaty data
+    The self.data_stat is meant ot represent the non-stationaty data
 
     """
 
@@ -19,7 +19,7 @@ class DataProcessor:
         self.beginTime = beginTime
         self.endTime = endTime
         self.data = data
-        self.data_non_stat = data
+        self.data_stat = data
         self.name = name
         self.max_iter = max_iter
 
@@ -32,7 +32,15 @@ class DataProcessor:
 
         if self.name == '2015-07.csv' or self.name == '2024-02.csv':
 
+            data['Column_1'] = data['TB3MS'] - data['CP3Mx']
+            data['Column_2'] = data['GS10'] - data['GS1']
+
+            # Change the first value of both columns to 2
+            data.at[0, 'Column_1'] = 1
+            data.at[0, 'Column_2'] = 1
+
             transform = data.iloc[0]
+            print(transform)
             data = data.drop(data.index[0])
 
             data['sasdate'] = pd.to_datetime(data['sasdate'])
@@ -43,12 +51,12 @@ class DataProcessor:
 
             self.data = data # We want to remove the transformation row from the data, and remove NaN values
             
-            self.data_non_stat = data # We want to transform the data_cleaned to a non stationary dataset, This is whydata = self.data_non_stat in the TransformData
+            self.data_stat = data # We want to transform the data_cleaned to a non stationary dataset, This is whydata = self.data_stat in the TransformData
             self.TransformData(transform)
     
 
     def TransformData(self, transform):
-        data = self.data_non_stat 
+        data = self.data_stat 
         data_original = self.data.copy() # Make a copy, to perserve the original data
 
         for column in transform.index:
@@ -93,20 +101,35 @@ class DataProcessor:
         data = data.drop(data.index[0])
         data = data.drop(data.index[0])
 
-        self.data_non_stat = data
+        self.data_stat = data
+
 
     """
 
     Method used to split the dataset in w and x variables
 
     """
-    def SplitDataSet(self, data):
 
-        names = []
+    def SplitDataSet(self, data, dependentVariable, name):
+        
+        if name == '2015-07.csv':
 
-        data_w = None
-        data_x = None
-        pass
+            names = ["AWHMAN", 'CUMFNS', 'HOUST', 'HWI', 'GS10', 'AMDMUOx', 'TWEXMMTH', 'NAPMSDI', 'Column_1', 'Column_2', 'sasdate', dependentVariable]
+            remove = ["AWHMAN", 'CUMFNS', 'HOUST', 'HWI', 'GS10', 'AMDMUOx', 'TWEXMMTH', 'NAPMSDI', 'Column_1', 'Column_2']
+        
+        elif name == '2024-02.csv':
+
+            names = ["AWHMAN", 'CUMFNS', 'HOUST', 'HWI', 'GS10', 'AMDMUOx', 'TWEXAFEGSMTHx', 'Column_1', 'Column_2', 'sasdate', dependentVariable]
+            remove = ["AWHMAN", 'CUMFNS', 'HOUST', 'HWI', 'GS10', 'AMDMUOx', 'TWEXAFEGSMTHx', 'Column_1', 'Column_2']
+
+        columns_to_keep = [col for col in names if col in data.columns]
+
+        data_w = data[columns_to_keep]
+
+        data_x = data.drop(columns=remove)
+        
+        return [data_w, data_x]
+
 
 
     """
@@ -114,11 +137,13 @@ class DataProcessor:
     Method used to merge the w and x variables
     
     """
+
     def MergeDataSet(self, data_w, data_x):
 
         data = pd.merge(data_w, data_x)
 
         return data
+    
 
     """
 
@@ -133,7 +158,7 @@ class DataProcessor:
 
         # Choose between the stationary and the non stationary dataset
         if cleaned:
-            data = self.data_non_stat
+            data = self.data_stat
         else: 
             data = self.data
 
@@ -170,7 +195,7 @@ class DataProcessor:
         else:
             pca = decomposition.PCA(n_components=k)
 
-        data = self.data_non_stat.drop(columns=['sasdate']) 
+        data = self.data_stat.drop(columns=['sasdate']) 
         scaled_data = pd.DataFrame(preprocessing.scale(data), columns=data.columns)
 
         pca.fit_transform(scaled_data)
