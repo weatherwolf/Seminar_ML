@@ -21,7 +21,7 @@ class Forecast:
         return (y-y_bar)*(y-y_bar)
     
     
-    def RollingWindow(self, dependentVariable, model, data=None):
+    def RollingWindow(self, dependentVariable, model, toInclude=None):
         totalError = 0
         numberOfWindows = 0
 
@@ -31,14 +31,18 @@ class Forecast:
         while(endTime + pd.DateOffset(months=1) <= max(self.data['sasdate'])):
 
             numberOfWindows += 1
-            print(f"beginTime: {beginTime}, endTime: {endTime}")
+            # print(f"beginTime: {beginTime}, endTime: {endTime}")
 
-            [x_train, y_train, x_test, y_test] = self.dataProcessor.CreateDataSet(dependentVariable=dependentVariable, beginTime=beginTime, endTime=endTime)
-            model.fit(x_train, y_train)
+            [x_train_non_stat, y_train_non_stat, x_test_non_stat, y_test_non_stat] = self.dataProcessor.CreateDataSet(dependentVariable=dependentVariable, beginTime=beginTime, endTime=endTime, toInclude=toInclude, cleaned=True)
+            [x_train_stat, y_train_stat, x_test_stat, y_test_stat] = self.dataProcessor.CreateDataSet(dependentVariable=dependentVariable, beginTime=beginTime, endTime=endTime, toInclude=toInclude, cleaned=False)
+            model.fit(x_train_non_stat, y_train_non_stat)
             coef = model.coef_
             intercept = model.intercept_
 
-            totalError += self.MSE(y_test, x_test, coef, intercept)
+            # To check whether the x_test and y_test are from the original or non-stationary dataset
+            # print(x_test)
+            # print(y_test)
+            totalError += self.MSE(y_test_non_stat, x_test_non_stat, coef, intercept)
 
             endTime = endTime + pd.DateOffset(months=1)
             beginTime = beginTime + pd.DateOffset(months=1)

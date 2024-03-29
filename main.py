@@ -8,6 +8,7 @@ import numpy as np
 
 # %%
 """
+
 select parameters which you want to use to run the model
 - beginTime -> begin of the initial time frame. This observation is taken into the timeframe
 - endTime -> end of the initial time frame. This observation is not taken into the timeframe
@@ -25,7 +26,8 @@ name = '2015-07.csv'
 
 # %%
 dataProcessor = DataProcessor(beginTime=beginTime, endTime=endTime, data=pd.read_csv(name), name=name)
-data = dataProcessor.cleanData()
+data = dataProcessor.data
+data_non_stat = dataProcessor.data_non_stat
 
 lambdaList = [10 ** i for i in range(-10, 4)]
 alphaList = [0.1 * i for i in range(1,10)]
@@ -51,7 +53,7 @@ You have choice between the following parameters for Model:
 dependentVar = 'RPI'
 k = 30 #Number of variables wanted in pca
 
-trainer = Model(max_iter=1000, alpha=1, l1_ratio=0.5, data=data)
+trainer = Model(max_iter=1000, alpha=1, l1_ratio=0.5)
 lasso = trainer.model("Lasso")
 ridge = trainer.model("Ridge")
 elasticNet = trainer.model("ElasticNet")
