@@ -1,6 +1,4 @@
 from sklearn import linear_model
-from statsmodels.tsa.ar_model import AutoReg
-import numpy as np
 
 class Model:
 
@@ -25,7 +23,10 @@ class Model:
             model = linear_model.LinearRegression()
 
         elif method == "AR":
-            model = int(self.num_lags)
+            model = AR(num_lags=self.num_lags)
+
+        elif method == "AdaptiveLasso":
+            model = AdaptiveLasso(max_iter = self.max_iter, alpha = self.alpha, l1_ratio=self.l1_ratio)
 
         else:
             raise ValueError("Invalid model name provided\n Try Lasso, Ridge, ElasticNet")
@@ -33,7 +34,9 @@ class Model:
         return model
     
 
-    def PAM():
+class PAM:
+        
+    def __init__(self):
         pass
 
     """
@@ -43,10 +46,17 @@ class Model:
     - k-th iteration 
 
     """
-    
 
 
+class AR:
+    def __init__(self, num_lags=1):
+        self.num_lags = num_lags
+        
 
+class AdaptiveLasso:
 
-
+    def __init__(self, max_iter=1000, alpha=1, l1_ratio=0.5):
+        self.max_iter = max_iter
+        self.alpha = alpha
+        self.l1_ratio = l1_ratio
     
