@@ -2,81 +2,65 @@ library(data.table)
 library(stats)
 library(MASS)
 
-Forecast <- R6Class("Forecast",
-    public = list(
-      initialize = function(data, dataProcessor) {
-        self$data <- data
-        self$dataProcessor <- dataProcessor
-      },
+source("Model.R")
+
+MSE = function(y, x, coef, intercept) {
+  y_bar <- intercept
+  y_bar <- y_bar + sum(x * coef)
+  
+  return((y - y_bar) ^ 2)
+}
       
-      MSE = function(y, x, coef, intercept) {
-        y_bar <- intercept
-        
-        for (i in 1:length(coef)) {
-          y_bar <- y_bar + x[1, i] * coef[i]
-        }
-        
-        return((y - y_bar) ^ 2)
-      },
-      
-      MSEP = function(x_test, x_train, coef, intercept, p) {
-        x_bar <- intercept
-        
-        for (i in 1:p) {
-          x_bar <- x_train[1, i] * (coef[i] ^ i)
-        }
-        
-        return((x_test - x_bar) ^ 2)
-      },
-      
-      RollingWindow = function(dependentVariable, model, toInclude=NULL) {
-        totalError <- 0
-        numberOfWindows <- 0
-        
-        beginTime <- min(self$data[['sasdate']])
-        endTime <- beginTime + months(10)
-        
-        while (endTime + months(1) <= max(self$data[['sasdate']])) {
-          numberOfWindows <- numberOfWindows + 1
-          
-          x_train_stat <- x_test_stat <- x_train_non_stat <- x_test_non_stat <- y_train_stat <- y_test_stat <- y_train_non_stat <- y_test_non_stat <- NULL
-          
-          x_train_stat <- self$dataProcessor$CreateDataSet(dependentVariable=dependentVariable, beginTime=beginTime, endTime=endTime, toInclude=toInclude, cleaned=TRUE)[[1]]
-          y_train_stat <- self$dataProcessor$CreateDataSet(dependentVariable=dependentVariable, beginTime=beginTime, endTime=endTime, toInclude=toInclude, cleaned=TRUE)[[2]]
-          x_test_stat <- self$dataProcessor$CreateDataSet(dependentVariable=dependentVariable, beginTime=beginTime, endTime=endTime, toInclude=toInclude, cleaned=TRUE)[[3]]
-          y_test_stat <- self$dataProcessor$CreateDataSet(dependentVariable=dependentVariable, beginTime=beginTime, endTime=endTime, toInclude=toInclude, cleaned=TRUE)[[4]]
-          
-          if (is.null(x_train_stat) || is.null(y_train_stat) || is.null(x_test_stat) || is.null(y_test_stat)) {
-            cat("Data not found for given time range.\n")
-            break
-          }
-          
-          if (inherits(model, "AR")) {
-            results <- AutoReg(y_train_stat, lags=seq(1, model$num_lags))
-            coef <- results$coef[2:length(results$coef)]
-            intercept <- results$coef[1]
-          } else if (inherits(model, "AdaptiveLasso")) {
-            ols <- lm(y_train_stat ~ x_train_stat)
-            initial_weights <- coef(ols)
-            
-            alasso <- asgl::ASGL(model="lm", penalization="alasso", lambda1=model$alpha, lasso_weights=initial_weights, max_iters=model$max_iter)
-            alasso$fit(x_train_stat, y_train_stat)
-            
-            coef <- alasso$coef_
-            intercept <- alasso$intercept_
-          } else {
-            model$fit(x_train_stat, y_train_stat)
-            coef <- model$coef_
-            intercept <- model$intercept_
-          }
-          
-          totalError <- totalError + self$MSE(y_test_stat, x_test_stat, coef, intercept)
-          
-          endTime <- endTime + months(1)
-          beginTime <- beginTime + months(1)
-        }
-        
-        return(totalError / numberOfWindows)
-      }
-    )
-)
+RollingWindow = function(dependentVariable, method, data, alpha = 0.5, toInclude=NULL) {
+  totalError <- 0
+  numberOfWindows <- 0
+  
+  beginTime <- 1
+
+  endTime <- 10
+  
+  while (endTime+1 <= nrow(data)) {
+    numberOfWindows <- numberOfWindows + 1
+    
+    totalStats <- CreateDataSet(data=data, dependentVariable=dependentVariable, beginTime=beginTime, endTime=endTime, toInclude=toInclude, cleaned=TRUE)
+
+    x_train_stat <- totalStats[1][[1]]
+    y_train_stat <- totalStats[2][[1]]
+    x_test_stat <-  totalStats[3][[1]]
+    y_test_stat <-  totalStats[4][[1]]
+    
+    if (is.null(x_train_stat) || is.null(y_train_stat) || is.null(x_test_stat) || is.null(y_test_stat)) {
+      cat("Data not found for given time range.\n")
+      break
+    }
+    
+    if (method == "Lasso") {
+      model <- glmnet(x = as.matrix(x_train_stat), y = as.matrix(y_train_stat), alpha = 1, lambda = 1)
+    } else if (method == "Ridge") {
+      model <- glmnet(x=as.matrix(x_train_stat), y=as.matrix(y_train_stat), alpha = 0, lambda = 1)
+    } else if (method == "ElasticNet") {
+      model <- glmnet(x=as.matrix(x_train_stat), y=as.matrix(y_train_stat), alpha = alpha, lambda = 1)
+    } else if (method == "PCA" || method == "SPCA") {
+      model <- stats::lm
+    } else if (method == "AR") {
+      # Implement AR model
+      model <- NULL
+    } else if (method == "AdaptiveLasso") {
+      # Implement Adaptive Lasso model
+      model <- NULL
+    } else {
+      stop("Invalid model name provided. Try Lasso, Ridge, ElasticNet")
+    }
+    
+    intercept <- coef(model)[1]
+    coef <- coef(model)[-1]
+    
+    totalError <- totalError + MSE(y_test_stat, x_test_stat, coef, intercept)
+    
+    endTime <- endTime + 1
+    beginTime <- beginTime + 1
+  }
+  
+  return(totalError / numberOfWindows)
+}
+    
