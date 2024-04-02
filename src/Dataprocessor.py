@@ -40,7 +40,6 @@ class DataProcessor:
             data.at[0, 'Column_2'] = 1
 
             transform = data.iloc[0]
-            print(transform)
             data = data.drop(data.index[0])
 
             data['sasdate'] = pd.to_datetime(data['sasdate'])
@@ -280,6 +279,49 @@ class DataProcessor:
             data[column] = data[column].fillna(mean)
 
         self.data_stat = data
+
+
+    """
+    Method that will create data sets that will be used to eventually calculate the DMSE weights
+    
+    The Method splits the 2 data sets up into x_train and x_test. 
+    - x_train: used to estimate the parameter Phi as cited in the paper: file:///C:/Users/wolfb/Downloads/1-s2.0-S0169207014000636-main.pdf
+    - x_test: used to create the MSE on which we will estimate
+
+    """
+
+    def CreateDataSetX(self, dependentVariable, endTime=None, P=1, toInclude=None):
+
+         # Choose between the stationary and the non stationary dataset
+        data = self.data_stat
+
+        endTime = endTime if endTime is not None else self.endTime
+
+        #Set the beginTime to P time steps back from the endTime, since we only want to consider P timesteps back
+        beginTime = endTime - pd.DateOffset(months=P)
+
+        # only keep the columns that are in the toInclude list
+        if toInclude is not None:
+            columns_to_keep = [col for col in toInclude if col in data.columns]
+            columns_to_keep.append('sasdate')
+            columns_to_keep.append(dependentVariable)
+            data = data[columns_to_keep]
+
+
+        data_cleaned_train = data[(data['sasdate'] < endTime) & (data['sasdate'] >= beginTime)]
+        x_train_past = data_cleaned_train.drop(columns=['sasdate'])
+
+        data_cleaned_train = data[(data['sasdate'] < endTime + pd.DateOffset(month=1)) & (data['sasdate'] >= endTime)]
+        x_test_past = data_cleaned_train[dependentVariable]
+
+        extraEndTime = endTime + pd.DateOffset(months=1)
+        extraBeginTime = beginTime + pd.DateOffset(month=1)
+
+        data_cleaned_test = data[(data['sasdate'] < extraEndTime + pd.DateOffset(month=1)) & (data['sasdate'] >= extraBeginTime)]
+        x_test_future = data_cleaned_test[dependentVariable]
+
+        return [x_train_past, x_test_past, x_test_future]   
+
 
     
     

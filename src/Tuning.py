@@ -74,5 +74,16 @@ class Tuning:
                 min_bic = bic   
 
         return min_lags
+    
+    """
+    Method that will tune the p for the factor model a
+    """
+    def DMSEWeights(self):
+
+        # Create the weights based on the data set created
+
+        pass # return the weights for the penalized model and the lasso model
+
+
 
     

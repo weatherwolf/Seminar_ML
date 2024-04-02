@@ -72,9 +72,9 @@ spca = trainer.model("SPCA")
 ar = trainer.model("AR")
 
 # Adaptive Lasso still has some error, so need to take a look at this
-# AdaptiveLasso = trainer.model("AdaptiveLasso")
+AdaptiveLasso = trainer.model("AdaptiveLasso")
 
-forecaster = Forecast(data=data, dataProcessor=dataProcessor)
+forecaster = Forecast(data=data_stat, dataProcessor=dataProcessor)
 
 error_Lasso = forecaster.RollingWindow(dependentVar, lasso)
 error_Ridge = forecaster.RollingWindow(dependentVar, ridge)
@@ -88,7 +88,7 @@ error_SPCA = forecaster.RollingWindow(dependentVar, spca, SPCAVariables)
 
 error_AR = forecaster.RollingWindow(dependentVar, ar)
 
-# error_AdaptiveLasso = forecaster.RollingWindow(dependentVar, AdaptiveLasso)
+error_AdaptiveLasso = forecaster.RollingWindow(dependentVar, AdaptiveLasso)
 
 # %%
 print(f"Lasso MSE over rolling window is: {error_Lasso}")
@@ -98,6 +98,6 @@ print(f"PCA MSE over rolling window is: {error_PCA}")
 print(f"SPCA MSE over rolling window is: {error_SPCA}")
 print(f"AR MSE over rolling window is: {error_AR}")
 
-# print(f"Adaptive Lasso MSE over rolling window is: {error_AdaptiveLasso}")
+print(f"Adaptive Lasso MSE over rolling window is: {error_AdaptiveLasso}")
 
 # %%
