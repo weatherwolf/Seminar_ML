@@ -103,8 +103,12 @@ RollingWindowNew = function(dependent_var, explanatory_vars_data, method, lambda
       # Implement AR model
       model <- NULL
     } else if (method == "AdaptiveLasso") {
-      # Implement Adaptive Lasso model
-      model <- NULL
+      model1 <- glmnet(x_train, y_train, alpha = 0, lambda = lambda)
+      betas <- coef(model1)[-1]  # Extract coefficients from Lasso model
+      weights <- 1 / (abs(betas))  # Calculate weights (add a small value to avoid division by zero)
+      
+      # Fit Adaptive Lasso model with calculated penalty factors
+      model <- glmnet(x_train, y_train, alpha = 1, lambda = 1000, penalty.factor = weights)
     } else {
       stop("Invalid model name provided. Try Lasso, Ridge, ElasticNet, PCA, SPCA, AR, or AdaptiveLasso")
     }
@@ -112,7 +116,7 @@ RollingWindowNew = function(dependent_var, explanatory_vars_data, method, lambda
     # Update lambda if applicable
     lambda <- model$lambda
     
-    if (method %in% c("Lasso", "Ridge", "ElasticNet")) {
+    if (method %in% c("Lasso", "Ridge", "ElasticNet", "AdaptiveLasso")) {
       intercept <- coef(model)[1]
       coef <- coef(model)[-1]
       

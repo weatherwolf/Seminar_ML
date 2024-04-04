@@ -115,39 +115,3 @@ SplitDataSet = function(data, dependentVariable, name) {
   
   return(list(data_w, data_x))
 }
-
-PCestimation = function(data_stat, k=30, sparse=FALSE) {
-  if (sparse) {
-    pca <- spca(data_stat, center=TRUE, scale=TRUE)
-  } else {
-    pca <- prcomp(data_stat, center=TRUE, scale.=TRUE)
-  }
-  
-  data <- data_stat
-  
-  scaled_data <- scale(data)
-
-  pca.fit <- pca$sdev
-  loadings <- pca$rotation
-  
-  scores <- pca$x[, 1]
-  
-  sorted_scores <- sort(abs(scores), decreasing=TRUE, index.return=TRUE)
-  top_k_vars <- rownames(sorted_scores$ix[1:k])
-  explained_variance <- sum(pca.fit[1:k]^2) / sum(pca.fit^2) * 100
-  
-  cat(sprintf("sum of total explained variance for the %d biggest variables: %.2f%%", k, explained_variance), "\n")
-  
-  return(top_k_vars)
-}
-
-ImputeNaN = function(data) {
-  for (column in names(data)) {
-    if (column == 'sasdate') next
-    
-    mean_val <- mean(data[[column]], na.rm=TRUE)
-    data[[column]][is.na(data[[column]])] <- mean_val
-  }
-  
-  return(data)
-}

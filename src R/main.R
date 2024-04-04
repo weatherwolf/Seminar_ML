@@ -150,6 +150,16 @@ for (col_name in names(dependent_vars_data)) {
   }
 }
 
+dependent_var_RPI <- dependent_vars_data$RPI
+dependent_var_INDPRO <- dependent_vars_data$INDPRO
+dependent_var_CMRMTSPLx <- dependent_vars_data$CMRMTSPLx
+dependent_var_PAYEMS <- dependent_vars_data$PAYEMS
+dependent_var_WPSFD49207 <- dependent_vars_data$WPSFD49207
+dependent_var_CPIAUCSL <- dependent_vars_data$CPIAUCSL
+dependent_var_CPIULFSL <- dependent_vars_data$CPIULFSL
+dependent_var_PCEPI <- dependent_vars_data$PCEPI
+
+
 # for each dependent variable, create a data set containing the corresponding explanatory variables
 expl_vars_RPI <- explanatory_vars_data[,!names(explanatory_vars_data) %in% highly_cor_RPI]
 expl_vars_INDPRO <- explanatory_vars_data[,!names(explanatory_vars_data) %in% highly_cor_INDPRO]
@@ -241,7 +251,7 @@ for (col_name in names(expl_vars_PCEPI)) {
 }
 
 
-dataset_list <- CreateDataSetNew(dependent_var, expl_vars_PCEPI, beginTime = 1, endTime = 100)
+dataset_list <- CreateDataSetNew(as.data.frame(dependent_var_PCEPI), as.data.frame(expl_vars_PCEPI), beginTime = 1, endTime = 100)
 x_train <- dataset_list[[1]]
 y_train <- dataset_list[[2]]
 x_test <- dataset_list[[3]]
@@ -275,13 +285,12 @@ alphaList <- seq(0.1, 0.9, by = 0.1)
 lasso <- "Lasso"
 ridge <- "Ridge"
 elasticNet <- "ElasticNet"
+adaptiveLasso <- "AdaptiveLasso"
 
-error_Lasso <- RollingWindowNew(dependent_var, explanatory_vars_data, method=lasso)
-error_Ridge <- RollingWindowNew(dependent_var, explanatory_vars_data, method=ridge)
-error_ElasticNet <- RollingWindowNew(dependent_var, explanatory_vars_data, method=elasticNet, alpha=0.001)
-
-PCAVariables <- PCestimation(data_stat=data, k=k, sparse=FALSE)
-SPCAVariables <- PCestimation(data_stat=data, k=k, sparse=TRUE)
+error_Lasso <- RollingWindowNew(as.data.frame(dependent_var_RPI), as.data.frame(expl_vars_RPI), method=lasso)
+error_Ridge <- RollingWindowNew(as.data.frame(dependent_var_RPI), as.data.frame(expl_vars_RPI), method=ridge)
+error_ElasticNet <- RollingWindowNew(as.data.frame(dependent_var_RPI), as.data.frame(expl_vars_RPI), method=elasticNet, alpha=0.01)
+error_AdaptiveLasso <- RollingWindowNew(as.data.frame(dependent_var_RPI), as.data.frame(expl_vars_RPI), method=adaptiveLasso)
 
 pca <- "PCA"
 spca <- "SPCA"
