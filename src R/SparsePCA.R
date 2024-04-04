@@ -5,7 +5,7 @@ k = 10 # number of factors we want to retrieve using sparse PCA
 spca_factors <- function(x, k=10) {
   ### sparse principal component analysis
   ### 
-  ### x: the data set from which the components need to be constructed
+  ### x: the data set from which the components need to be constructed (type data frame)
   ### k: number of factors (components) to return
   ###
   ### returns a data frame containing the factors
