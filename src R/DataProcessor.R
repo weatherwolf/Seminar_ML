@@ -1,7 +1,7 @@
 library(data.table)
 library(stats)
 library(MASS)
-
+library(sparsepca)
 
 cleanData = function(data, name) {
   
@@ -72,6 +72,32 @@ CreateDataSet <- function(data, dependentVariable, beginTime=NULL, endTime=NULL,
   return(list(x_train, y_train, x_test, y_test))
 }
 
+
+CreateDataSetNew <- function(dependent_var, explanatory_vars_data, beginTime=NULL, endTime=NULL, toInclude=NULL) {
+  
+  # beginTime <- ifelse(!is.null(beginTime), beginTime, 1)
+  # endTime <- ifelse(!is.null(endTime), endTime, 10)
+  
+  if (!is.null(toInclude)) {
+    columns_to_keep <- toInclude[toInclude %in% colnames(data)]
+    columns_to_keep <- c(columns_to_keep)
+    
+    explanatory_vars_data <- explanatory_vars_data[, c(columns_to_keep)]
+  }
+  
+  x_train <- explanatory_vars_data[beginTime:endTime,]
+  y_train <- dependent_var[beginTime:endTime,]
+  
+  x_test <- explanatory_vars_data[endTime+1,]
+  y_test <- dependent_var[endTime+1,]
+  
+  y_train <- as.data.frame(y_train)
+  y_test <- as.data.frame(y_test)
+  
+  return(list(x_train, y_train, x_test, y_test))
+}
+
+
 SplitDataSet = function(data, dependentVariable, name) {
   if (name == '2015-07.csv') {
     names <- c("AWHMAN", 'CUMFNS', 'HOUST', 'HWI', 'GS10', 'AMDMUOx', 'TWEXMMTH', 'NAPMSDI', 'Column_1', 'Column_2', dependentVariable)
@@ -92,25 +118,23 @@ SplitDataSet = function(data, dependentVariable, name) {
 
 PCestimation = function(data_stat, k=30, sparse=FALSE) {
   if (sparse) {
-    pca <- prcomp(center=TRUE, scale.=TRUE)
+    pca <- spca(data_stat, center=TRUE, scale=TRUE)
   } else {
-    pca <- prcomp(center=TRUE, scale.=TRUE)
+    pca <- prcomp(data_stat, center=TRUE, scale.=TRUE)
   }
   
-  data <- data_stat[, !('sasdate' %in% names(self$data_stat))]
+  data <- data_stat
   
   scaled_data <- scale(data)
-  
+
   pca.fit <- pca$sdev
   loadings <- pca$rotation
   
   scores <- pca$x[, 1]
   
   sorted_scores <- sort(abs(scores), decreasing=TRUE, index.return=TRUE)
-  
   top_k_vars <- rownames(sorted_scores$ix[1:k])
-  
-  explained_variance <- sum(pca.fit^2) / sum(pca.fit^2) * 100
+  explained_variance <- sum(pca.fit[1:k]^2) / sum(pca.fit^2) * 100
   
   cat(sprintf("sum of total explained variance for the %d biggest variables: %.2f%%", k, explained_variance), "\n")
   
@@ -126,28 +150,4 @@ ImputeNaN = function(data) {
   }
   
   return(data)
-}
-
-CreateDataSetX = function(data, dependentVariable, endTime=NULL, P=1, toInclude=NULL) {
-  endTime <- as.Date(endTime)
-  beginTime <- endTime - months(P)
-  
-  if (!is.null(toInclude)) {
-    columns_to_keep <- c(toInclude, 'sasdate', dependentVariable)
-    data <- data[, ..columns_to_keep]
-  }
-  
-  data_cleaned_train <- data[data$sasdate < endTime & data$sasdate >= beginTime]
-  x_train_past <- data_cleaned_train[, !(names(data_cleaned_train) %in% c('sasdate', dependentVariable))]
-  
-  data_cleaned_train <- data[data$sasdate < endTime + months(1) & data$sasdate >= endTime]
-  x_test_past <- data_cleaned_train[[dependentVariable]]
-  
-  extraEndTime <- endTime + months(1)
-  extraBeginTime <- beginTime + months(1)
-  
-  data_cleaned_test <- data[data$sasdate < extraEndTime + months(1) & data$sasdate >= extraBeginTime]
-  x_test_future <- data_cleaned_test[[dependentVariable]]
-  
-  return(list(x_train_past, x_test_past, x_test_future))
 }

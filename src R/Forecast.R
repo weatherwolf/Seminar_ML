@@ -11,37 +11,94 @@ MSE = function(y, x, coef, intercept) {
   return((y - y_bar) ^ 2)
 }
       
-RollingWindow = function(dependentVariable, method, data, alpha = 0.5, toInclude=NULL) {
+# RollingWindow = function(dependentVariable, method, data, alpha = 0.5, toInclude=NULL) {
+#   totalError <- 0
+#   numberOfWindows <- 0
+#   
+#   beginTime <- 1
+# 
+#   endTime <- 10
+#   
+#   while (endTime+1 <= nrow(data)) {
+#     numberOfWindows <- numberOfWindows + 1
+#     
+#     totalStats <- CreateDataSet(data=data, dependentVariable=dependentVariable, beginTime=beginTime, endTime=endTime, toInclude=toInclude, cleaned=TRUE)
+# 
+#     x_train <- totalStats[1][[1]]
+#     y_train <- totalStats[2][[2]]
+#     x_test <-  totalStats[3][[3]]
+#     y_test <-  totalStats[4][[4]]
+#     
+#     if (is.null(x_train) || is.null(y_train) || is.null(x_test) || is.null(y_test)) {
+#       cat("Data not found for given time range.\n")
+#       break
+#     }
+#     
+#     if (method == "Lasso") {
+#       model <- glmnet(x = as.matrix(x_train), y = as.matrix(y_train), alpha = 1, lambda = 1)
+#     } else if (method == "Ridge") {
+#       model <- glmnet(x=as.matrix(x_train), y=as.matrix(y_train), alpha = 0, lambda = 1)
+#     } else if (method == "ElasticNet") {
+#       model <- glmnet(x=as.matrix(x_train), y=as.matrix(y_train), alpha = alpha, lambda = 1)
+#     } else if (method == "PCA" || method == "SPCA") {
+#       model <- stats::lm(as.matrix(y_train), as.matrix(x_train))
+#     } else if (method == "AR") {
+#       # Implement AR model
+#       model <- NULL
+#     } else if (method == "AdaptiveLasso") {
+#       # Implement Adaptive Lasso model
+#       model <- NULL
+#     } else {
+#       stop("Invalid model name provided. Try Lasso, Ridge, ElasticNet")
+#     }
+#     
+#     intercept <- model$coefficients[1]
+#     coef <- model$coefficients[-1]
+#     
+#     totalError <- totalError + MSE(y_test, x_test, coef, intercept)
+#     print(totalError)
+#     
+#     endTime <- endTime + 1
+#     beginTime <- beginTime + 1
+#     
+#     }
+#   
+#   return(totalError / numberOfWindows)
+# }
+
+
+RollingWindowNew = function(dependent_var, explanatory_vars_data, method, lambda= 1, alpha = 0.5, toInclude=NULL) {
   totalError <- 0
   numberOfWindows <- 0
   
   beginTime <- 1
-
   endTime <- 10
   
-  while (endTime+1 <= nrow(data)) {
+  while (endTime + 1 <= nrow(explanatory_vars_data)) {
     numberOfWindows <- numberOfWindows + 1
     
-    totalStats <- CreateDataSet(data=data, dependentVariable=dependentVariable, beginTime=beginTime, endTime=endTime, toInclude=toInclude, cleaned=TRUE)
-
-    x_train_stat <- totalStats[1][[1]]
-    y_train_stat <- totalStats[2][[1]]
-    x_test_stat <-  totalStats[3][[1]]
-    y_test_stat <-  totalStats[4][[1]]
+    totalStats <- CreateDataSetNew(dependent_var, explanatory_vars_data, beginTime = beginTime, endTime = endTime)
     
-    if (is.null(x_train_stat) || is.null(y_train_stat) || is.null(x_test_stat) || is.null(y_test_stat)) {
+    x_train <- as.matrix(totalStats[[1]])
+    y_train <- as.matrix(totalStats[[2]])
+    x_test <-  as.matrix(totalStats[[3]])
+    y_test <- as.matrix(totalStats[[4]])
+    
+    if (is.null(x_train) || is.null(y_train) || is.null(x_test) || is.null(y_test)) {
       cat("Data not found for given time range.\n")
       break
     }
     
     if (method == "Lasso") {
-      model <- glmnet(x = as.matrix(x_train_stat), y = as.matrix(y_train_stat), alpha = 1, lambda = 1)
+      model <- glmnet(x_train, y_train, alpha = 1, lambda = lambda)
     } else if (method == "Ridge") {
-      model <- glmnet(x=as.matrix(x_train_stat), y=as.matrix(y_train_stat), alpha = 0, lambda = 1)
+      model <- glmnet(x_train, y_train, alpha = 0, lambda = lambda)
     } else if (method == "ElasticNet") {
-      model <- glmnet(x=as.matrix(x_train_stat), y=as.matrix(y_train_stat), alpha = alpha, lambda = 1)
-    } else if (method == "PCA" || method == "SPCA") {
-      model <- stats::lm
+      model <- glmnet(x_train, y_train, alpha = alpha, lambda = lambda)
+    } else if (method == "PCA") {
+      model <- prcomp(x_train)
+    } else if (method == "SPCA") {
+      model <- nsprcomp(x_train)
     } else if (method == "AR") {
       # Implement AR model
       model <- NULL
@@ -49,18 +106,31 @@ RollingWindow = function(dependentVariable, method, data, alpha = 0.5, toInclude
       # Implement Adaptive Lasso model
       model <- NULL
     } else {
-      stop("Invalid model name provided. Try Lasso, Ridge, ElasticNet")
+      stop("Invalid model name provided. Try Lasso, Ridge, ElasticNet, PCA, SPCA, AR, or AdaptiveLasso")
     }
     
-    intercept <- coef(model)[1]
-    coef <- coef(model)[-1]
+    # Update lambda if applicable
+    lambda <- model$lambda
     
-    totalError <- totalError + MSE(y_test_stat, x_test_stat, coef, intercept)
+    if (method %in% c("Lasso", "Ridge", "ElasticNet")) {
+      intercept <- coef(model)[1]
+      coef <- coef(model)[-1]
+      
+      totalError <- totalError + MSE(y_test, x_test, coef, intercept)
+    } else if (method %in% c("PCA", "SPCA")) {
+      # Perform PCA/SPCA and compute the error
+      # Assuming MSE function is defined elsewhere
+      # Compute total error here
+      # totalError <- totalError + ComputeErrorForPCA()  # Call a function to compute error for PCA
+    } else {
+      # Handle other methods
+    }
     
-    endTime <- endTime + 1
+    # Update beginTime and endTime for the next window
     beginTime <- beginTime + 1
+    endTime <- endTime + 1
   }
   
-  return(totalError / numberOfWindows)
+  print(totalError)
 }
-    
+
