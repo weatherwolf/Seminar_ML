@@ -1,11 +1,11 @@
 ##### LA(PC) ####
-# Step 1: Use LARS algorithm and select the first 30 predictors
+# Step 1: Use LARS algorithm that applies LASSO, and select the first 30 predictors
 # Step 2: Construct factors from the 30 predictors using PCA
 
-#k = 10 # number of factors to retrieve
+# k = 10 # number of factors to retrieve
 
 lapc_factors <- function(x, y, k=10, max_steps=30) {
-  ### sparse principal component analysis
+  ###  LA(PC) method
   ### 
   ### x: the data set from which the components need to be constructed (type data frame)
   ### y: dependent variable (type vector)
