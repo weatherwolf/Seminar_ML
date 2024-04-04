@@ -88,60 +88,60 @@ class Forecast:
         return totalError/numberOfWindows
     
 
-    """
+    # """
 
-    Method that will be used to estimate the parameter Phi as cited in the paper: file:///C:/Users/wolfb/Downloads/1-s2.0-S0169207014000636-main.pdf
+    # Method that will be used to estimate the parameter Phi as cited in the paper: file:///C:/Users/wolfb/Downloads/1-s2.0-S0169207014000636-main.pdf
    
-    This method will test how many steps back, for p will be the best to use and estimate the model for both the penalized regression and the factor model
-    will use a rolling window method over all the T's possible, where we will use k=12 as used in the paper.
+    # This method will test how many steps back, for p will be the best to use and estimate the model for both the penalized regression and the factor model
+    # will use a rolling window method over all the T's possible, where we will use k=12 as used in the paper.
 
-    @return: the MSE of the data that looks p steps back.
+    # @return: the MSE of the data that looks p steps back.
 
-    """
-    def RollingWindowX(self, dependentVariable, model, toInclude=None, P=1):
+    # """
+    # def RollingWindowX(self, dependentVariable, model, toInclude=None, P=1):
 
-        totalError = 0
-        numberOfWindows = 0
+    #     totalError = 0
+    #     numberOfWindows = 0
 
-        beginTime = min(self.data['sasdate'])
-        endTime = beginTime + pd.DateOffset(years=10)
+    #     beginTime = min(self.data['sasdate'])
+    #     endTime = beginTime + pd.DateOffset(years=10)
 
-        while(endTime + pd.DateOffset(months=1) <= max(self.data['sasdate'])):
+    #     while(endTime + pd.DateOffset(months=1) <= max(self.data['sasdate'])):
 
-            numberOfWindows += 1
+    #         numberOfWindows += 1
 
-            [x_train_stat, x_test_stat] = self.dataProcessor.CreateDataSetX(dependentVariable=dependentVariable, endTime=endTime, toInclude=toInclude, P=P)
+    #         [x_train_stat, x_test_stat] = self.dataProcessor.CreateDataSetX(dependentVariable=dependentVariable, endTime=endTime, toInclude=toInclude, P=P)
 
-            if isinstance(model, AR): #Check if the model is a AR model, if for, use autoregressive model
+    #         if isinstance(model, AR): #Check if the model is a AR model, if for, use autoregressive model
 
-                # Not completely sure yet whether the amount of lags is calculated correctly.
+    #             # Not completely sure yet whether the amount of lags is calculated correctly.
                 
-                results = AutoReg(x_train_stat, lags=list(range(1,model.num_lags+1))).fit()
-                coef = results.params[1:]
-                intercept = results.params[0]
+    #             results = AutoReg(x_train_stat, lags=list(range(1,model.num_lags+1))).fit()
+    #             coef = results.params[1:]
+    #             intercept = results.params[0]
 
-            elif isinstance(model, AdaptiveLasso): #Check if the model is Adaptive Lasso, if so, use a two step Lasso model
+    #         elif isinstance(model, AdaptiveLasso): #Check if the model is Adaptive Lasso, if so, use a two step Lasso model
 
-                ols = linear_model.LinearRegression()
-                ols.fit(x_train_stat, x_test_stat)
-                initial_weights = ols.coef_
+    #             ols = linear_model.LinearRegression()
+    #             ols.fit(x_train_stat, x_test_stat)
+    #             initial_weights = ols.coef_
                 
-                alasso = asgl.ASGL(model="lm", penalization="alasso", lambda1=model.alpha, lasso_weights=initial_weights, max_iters=model.max_iter)
-                alasso.fit(x_train_stat, x_test_stat)
-                coef = alasso.coef_
-                intercept = alasso.intercept_
+    #             alasso = asgl.ASGL(model="lm", penalization="alasso", lambda1=model.alpha, lasso_weights=initial_weights, max_iters=model.max_iter)
+    #             alasso.fit(x_train_stat, x_test_stat)
+    #             coef = alasso.coef_
+    #             intercept = alasso.intercept_
 
-            else: #If not one of the models above, the model has already been fully specified in the Model class
+    #         else: #If not one of the models above, the model has already been fully specified in the Model class
 
-                model.fit(x_train_stat, x_test_stat)
-                coef = model.coef_
-                intercept = model.intercept_
+    #             model.fit(x_train_stat, x_test_stat)
+    #             coef = model.coef_
+    #             intercept = model.intercept_
             
 
-            totalError += self.MSEP(x_test_stat, x_train_stat, coef, intercept)
+    #         totalError += self.MSEP(x_test_stat, x_train_stat, coef, intercept)
 
-            endTime = endTime + pd.DateOffset(months=1)
-            beginTime = beginTime + pd.DateOffset(months=1)
+    #         endTime = endTime + pd.DateOffset(months=1)
+    #         beginTime = beginTime + pd.DateOffset(months=1)
         
     
-        return totalError/numberOfWindows
+    #     return totalError/numberOfWindows

@@ -19,9 +19,6 @@ name <- "2024-02.csv"
 
 
 
-
-
-
 data_with_date_transformation <- read.csv('2024-02.csv')
 transformations <- data_with_date_transformation[1,]
 data_with_date <- data_with_date_transformation[-1,]
@@ -251,29 +248,121 @@ for (col_name in names(expl_vars_PCEPI)) {
 }
 
 
-dataset_list <- CreateDataSetNew(as.data.frame(dependent_var_PCEPI), as.data.frame(expl_vars_PCEPI), beginTime = 1, endTime = 100)
-x_train <- dataset_list[[1]]
-y_train <- dataset_list[[2]]
-x_test <- dataset_list[[3]]
-y_test <- dataset_list[[4]]
+
+#### PCA ####
+k = 30 # number of factors we want to retrieve using PCA
+
+# principal component analysis for RPI to get the factors
+pca_RPI <- prcomp(expl_vars_RPI, scale = TRUE) 
+loadings_RPI <- pca_RPI$rotation[,1:k]
+factors_RPI <- scale(expl_vars_RPI) %*% loadings_RPI
+
+# principal component analysis for INDPRO
+pca_INDPRO <- prcomp(expl_vars_INDPRO, scale = TRUE) 
+loadings_INDPRO <- pca_INDPRO$rotation[,1:k]
+factors_INDPRO <- scale(expl_vars_INDPRO) %*% loadings_INDPRO
+
+# principal component analysis for CMRMTSPLx
+pca_CMRMTSPLx <- prcomp(expl_vars_CMRMTSPLx, scale = TRUE) 
+loadings_CMRMTSPLx <- pca_CMRMTSPLx$rotation[,1:k]
+factors_CMRMTSPLx <- scale(expl_vars_CMRMTSPLx) %*% loadings_CMRMTSPLx
+
+# principal component analysis for PAYEMS
+pca_PAYEMS <- prcomp(expl_vars_PAYEMS, scale = TRUE) 
+loadings_PAYEMS <- pca_PAYEMS$rotation[,1:k]
+factors_PAYEMS <- scale(expl_vars_PAYEMS) %*% loadings_PAYEMS
+
+# principal component analysis for WPSFD49207
+pca_WPSFD49207 <- prcomp(expl_vars_WPSFD49207, scale =  TRUE) 
+loadings_WPSFD49207 <- pca_WPSFD49207$rotation[,1:k]
+factors_WPSFD49207 <- scale(expl_vars_WPSFD49207) %*% loadings_WPSFD49207
+
+# principal component analysis for CPIAUCSL
+pca_CPIAUCSL <- prcomp(expl_vars_CPIAUCSL, scale = TRUE) 
+loadings_CPIAUCSL <- pca_CPIAUCSL$rotation[,1:k]
+factors_CPIAUCSL <- scale(expl_vars_CPIAUCSL) %*% loadings_CPIAUCSL
+
+# principal component analysis for CPIULFSL
+pca_CPIULFSL <- prcomp(expl_vars_CPIULFSL, scale = TRUE) 
+loadings_CPIULFSL <- pca_CPIULFSL$rotation[,1:k]
+factors_CPIULFSL <- scale(expl_vars_CPIULFSL) %*% loadings_CPIULFSL
+
+# principal component analysis for PCEPI
+pca_PCEPI <- prcomp(expl_vars_PCEPI, scale = TRUE) 
+loadings_PCEPI <- pca_PCEPI$rotation[,1:k]
+factors_PCEPI <- scale(expl_vars_PCEPI) %*% loadings_PCEPI
 
 
 
 
 
-# dependentVariable <- "RPI"
-# k <- 10 # Number of variables wanted in PCA
-# 
-# # Load data
-# data <- fread(name)
-# data = subset(data, select = -(sasdate))
-# 
-# # Split data
-# data <- cleanData(data, name) 
-# data_split <- SplitDataSet(data, dependentVariable, name)
-# 
-# data_w <- data_split$data_w
-# data_x <- data_split$data_x
+
+
+
+
+##### Sparse PCA #####
+# for sparse pca we make use of default values: alpha = 1e-04, beta = 1e-04, max_iter = 1000 
+
+# sparse principal component analysis for RPI to get the factors.
+spca_RPI <- spca(expl_vars_RPI, scale = TRUE) 
+loadings_spca_RPI <- spca_RPI$loadings[,1:k]
+factors_spca_RPI <- scale(expl_vars_RPI) %*% loadings_spca_RPI
+
+# sparse principal component analysis for INDPRO 
+spca_INDPRO <- spca(expl_vars_INDPRO, scale = TRUE) 
+loadings_spca_INDPRO <- spca_INDPRO$loadings[,1:k]
+factors_spca_INDPRO <- scale(expl_vars_INDPRO) %*% loadings_spca_INDPRO
+
+# sparse principal component analysis for CMRMTSPLx 
+spca_CMRMTSPLx <- spca(expl_vars_CMRMTSPLx, scale = TRUE) 
+loadings_spca_CMRMTSPLx <- spca_CMRMTSPLx$loadings[,1:k]
+factors_spca_CMRMTSPLx <- scale(expl_vars_CMRMTSPLx) %*% loadings_spca_CMRMTSPLx
+
+# sparse principal component analysis for PAYEMS 
+spca_PAYEMS <- spca(expl_vars_PAYEMS, scale = TRUE) 
+loadings_spca_PAYEMS <- spca_PAYEMS$loadings[,1:k]
+factors_spca_PAYEMS <- scale(expl_vars_PAYEMS) %*% loadings_spca_PAYEMS
+
+# sparse principal component analysis for PAYEMS 
+spca_WPSFD49207 <- spca(expl_vars_WPSFD49207, scale = TRUE) 
+loadings_spca_WPSFD49207 <- spca_WPSFD49207$loadings[,1:k]
+factors_spca_WPSFD49207 <- scale(expl_vars_WPSFD49207) %*% loadings_spca_WPSFD49207
+
+# sparse principal component analysis for CPIAUCSL 
+spca_CPIAUCSL <- spca(expl_vars_CPIAUCSL, scale = TRUE) 
+loadings_spca_CPIAUCSL <- spca_CPIAUCSL$loadings[,1:k]
+factors_spca_CPIAUCSL <- scale(expl_vars_CPIAUCSL) %*% loadings_spca_CPIAUCSL
+
+# sparse principal component analysis for CPIULFSL 
+spca_CPIULFSL <- spca(expl_vars_CPIULFSL, scale = TRUE) 
+loadings_spca_CPIULFSL <- spca_CPIULFSL$loadings[,1:k]
+factors_spca_CPIULFSL <- scale(expl_vars_CPIULFSL) %*% loadings_spca_CPIULFSL
+
+# sparse principal component analysis for PCEPI 
+spca_PCEPI <- spca(expl_vars_PCEPI, scale = TRUE) 
+loadings_spca_PCEPI <- spca_PCEPI$loadings[,1:k]
+factors_spca_PCEPI <- scale(expl_vars_PCEPI) %*% loadings_spca_PCEPI
+
+
+##### LA(PC) #####
+
+factors_lapc_RPI <- lapc_factors(x=expl_vars_RPI,y=dependent_vars_data$RPI)
+factors_lapc_INDPRO <- lapc_factors(x=expl_vars_INDPRO,y=dependent_vars_data$INDPRO)
+factors_lapc_CMRMTSPLx <- lapc_factors(x=expl_vars_CMRMTSPLx, y=dependent_vars_data$CMRMTSPLx)
+factors_lapc_PAYEMS <- lapc_factors(x=expl_vars_PAYEMS, y=dependent_vars_data$PAYEMS)
+factors_lapc_WPSFD49207 <- lapc_factors(x=expl_vars_WPSFD49207, y=dependent_vars_data$WPSFD49207)
+factors_lapc_CPIAUCSL <- lapc_factors(x=expl_vars_CPIAUCSL, y=dependent_vars_data$CPIAUCSL)
+factors_lapc_CPIULFSL <- lapc_factors(x=expl_vars_CPIULFSL, y=dependent_vars_data$CPIULFSL)
+factors_lapc_PCEPI <- lapc_factors(x=expl_vars_PCEPI, y=dependent_vars_data$PCEPI)
+
+
+
+
+
+source("Dataprocessor.R")
+source("Forecast.R")
+source("Model.R")
+source("Tuning.R")
 
 lambdaList <- 10^(-10:4)
 alphaList <- seq(0.1, 0.9, by = 0.1)
@@ -287,16 +376,19 @@ ridge <- "Ridge"
 elasticNet <- "ElasticNet"
 adaptiveLasso <- "AdaptiveLasso"
 
-error_Lasso <- RollingWindowNew(as.data.frame(dependent_var_RPI), as.data.frame(expl_vars_RPI), method=lasso)
-error_Ridge <- RollingWindowNew(as.data.frame(dependent_var_RPI), as.data.frame(expl_vars_RPI), method=ridge)
-error_ElasticNet <- RollingWindowNew(as.data.frame(dependent_var_RPI), as.data.frame(expl_vars_RPI), method=elasticNet, alpha=0.01)
-error_AdaptiveLasso <- RollingWindowNew(as.data.frame(dependent_var_RPI), as.data.frame(expl_vars_RPI), method=adaptiveLasso)
+error_Lasso <- RollingWindowNew(as.data.frame(dependent_var_RPI), as.data.frame(expl_vars_RPI), method=lasso, penalty=penalty_factor_RPI)
+error_Ridge <- RollingWindowNew(as.data.frame(dependent_var_RPI), as.data.frame(expl_vars_RPI), method=ridge, penalty=penalty_factor_RPI)
+error_ElasticNet <- RollingWindowNew(as.data.frame(dependent_var_RPI), as.data.frame(expl_vars_RPI), method=elasticNet, alpha=0.01, penalty=penalty_factor_RPI)
+error_AdaptiveLasso <- RollingWindowNew(as.data.frame(dependent_var_RPI), as.data.frame(expl_vars_RPI), method=adaptiveLasso, penalty=penalty_factor_RPI)
 
 pca <- "PCA"
 spca <- "SPCA"
+lapc <- "LAPC"
 
-error_PCA <- RollingWindow(dependentVariable, data=data, method=pca, toInclude=PCAVariables)
-error_SPCA <- RollingWindow(dependentVariable, data=data, method=spca, toInclude=SPCAVariables)
+error_PCA <- RollingWindowNew(as.data.frame(dependent_var_RPI), as.data.frame(factors_RPI), method=pca)
+error_SPCA <- RollingWindowNew(as.data.frame(dependent_var_RPI), as.data.frame(factors_spca_RPI), method=spca)
+error_LAPC <- RollingWindowNew(as.data.frame(dependent_var_RPI), as.data.frame(factors_lapc_RPI), method=lapc)
+
 
 # error_AR <- RollingWindow(dependentVar, ar)
 
@@ -305,8 +397,10 @@ error_SPCA <- RollingWindow(dependentVariable, data=data, method=spca, toInclude
 print(paste("Lasso MSE over rolling window is:", error_Lasso))
 print(paste("Ridge MSE over rolling window is:", error_Ridge))
 print(paste("Elastic Net MSE over rolling window is:", error_ElasticNet))
-# print(paste("PCA MSE over rolling window is:", error_PCA))
-# print(paste("SPCA MSE over rolling window is:", error_SPCA))
+print(paste("Adaptive Lasso MSE over rolling window is:", error_AdaptiveLasso))
+print(paste("PCA MSE over rolling window is:", error_PCA))
+print(paste("SPCA MSE over rolling window is:", error_SPCA))
+print(paste("LAPC MSE over rolling window is:", error_LAPC))
 # print(paste("AR MSE over rolling window is:", error_AR))
 
 # print(paste("Adaptive Lasso MSE over rolling window is:", error_AdaptiveLasso))
