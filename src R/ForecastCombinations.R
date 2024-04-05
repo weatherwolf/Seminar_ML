@@ -9,26 +9,30 @@ getForecastCombination <- function(y, forecasts, type="equal"){
   ### type: string containing the type of forecast combination
   ###
   ### returns the forecast combination 
-  foreComb <- foreccomb(observed_vector = y, prediction_matrix = as.matrix(forecasts))
   if (type == "equal") {
     # forecast combination of equal weights
+    foreComb <- foreccomb(observed_vector = y, prediction_matrix = as.matrix(forecasts))
     forecast <- comb_SA(foreComb)
+    return(forecast$Fitted)
   } else if (type == "ols") {
+    foreComb <- foreccomb(observed_vector = y, prediction_matrix = as.matrix(forecasts))
     forecast <- comb_OLS(foreComb)
+    return(forecast$Fitted)
   } else if (type == "lasso") {
     model <- glmnet(forecasts, y, alpha = 1, lambda=1, intercept = FALSE)
     print(coef(model))
     forecast <- predict(model, as.matrix(forecasts))
-    
+    return (forecast)
   } else if (type == "ridge") {
     model <- glmnet(forecasts, y, alpha = 0, lambda=1, intercept = FALSE)
     print(coef(model))
     forecast <- predict(model, as.matrix(forecasts))
+    return (forecast)
   } else {
     stop("Error: invalid type of forecast combination, try: equal, ols, lasso or ridge")
   }
   
-  return (forecast)
+
 }
 
 y <- c(0.3,0.27,0.33,0.44)
