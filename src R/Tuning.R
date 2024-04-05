@@ -45,26 +45,18 @@ TuningForecast = function(data, model, lambdaList, alphaList, dependentVariable)
 }
   
 
-TuningLags = function(data, dependentVariable) {
-  # Method that will be used to tune the amount of lags for the AR model
-  
-  min_bic <- 0
-  min_lags <- 0
-  
-  for (p in 1:7) { # thought p = 1,...,6.
-    
-    lagList <- 1:p
-    
-    res <- stats::ar(data[[dependentVariable]], aic=FALSE, order.max=p, method='ols')
-    bic <- AIC(res)
-    
-    if (bic < min_bic || min_bic == 0) {
-      min_lags <- p
-      min_bic <- bic
+AR_model<-function(x,y){
+  best_bic <- Inf
+  for(p in 1:6) {
+    model <- Arima(y, order = c(p,0,0), include.mean = FALSE)
+    bic <- BIC(model)
+    if (bic < best_bic){
+      best_bic <- bic
+      best_model <- model
+      best_lag <- p
     }
   }
-  
-  return(min_lags)
+  return(best_lag)
 }
 
 

@@ -6,10 +6,12 @@ library(R6)
 # Load custom functions from R scripts
 source("Dataprocessor.R")
 source("Forecast.R")
-
-
 source("Model.R")
 source("Tuning.R")
+source("SparsePCA.R")
+source("LA(PC).R")
+source("PrincipalComponent.R")
+
 
 # Select parameters
 beginTime <- 1
@@ -18,7 +20,7 @@ name <- "2024-02.csv"
 
 
 
-
+##### Data processing #####
 data_with_date_transformation <- read.csv('2024-02.csv')
 transformations <- data_with_date_transformation[1,]
 data_with_date <- data_with_date_transformation[-1,]
@@ -88,6 +90,9 @@ explanatory_vars_data <- data_transformed[,!names(data_transformed) %in% depende
 correlations <- data.frame(matrix(ncol = ncol(dependent_vars_data), nrow = ncol(explanatory_vars_data)))
 colnames(correlations) <- names(dependent_vars_data)
 rownames(correlations) <- names(explanatory_vars_data)
+# create a vector containing the names of the w variables
+w_economic_activity <- c("AWHMAN", "CUMFNS", "HOUST", "HWI", "GS10", "AMDMUOx")
+w_price_indices <- c("UNRATE", "HOUST", "AMDMNOx", "M1SL", "FEDFUNDS", "T1YFFM")
 # for each dependent variable, create vector that contains the highly correlated variables
 highly_cor_RPI <- c()
 highly_cor_INDPRO <- c()
@@ -167,195 +172,128 @@ expl_vars_CPIAUCSL <- explanatory_vars_data[,!names(explanatory_vars_data) %in% 
 expl_vars_CPIULFSL <- explanatory_vars_data[,!names(explanatory_vars_data) %in% highly_cor_CPIULFSL]
 expl_vars_PCEPI <- explanatory_vars_data[,!names(explanatory_vars_data) %in% highly_cor_PCEPI]
 
-# create penalty factor for each dependent variable, so that certain variables (w) are not penalized
-penalty_factor_RPI <- numeric(ncol(expl_vars_RPI))
-penalty_factor_RPI[] <- 1
-penalty_factor_INDPRO <- numeric(ncol(expl_vars_INDPRO))
-penalty_factor_INDPRO[] <- 1
-penalty_factor_CMRMTSPLx <- numeric(ncol(expl_vars_CMRMTSPLx))
-penalty_factor_CMRMTSPLx[] <- 1
-penalty_factor_PAYEMS <- numeric(ncol(expl_vars_PAYEMS))
-penalty_factor_PAYEMS[] <- 1
-penalty_factor_WPSFD49207 <- numeric(ncol(expl_vars_WPSFD49207))
-penalty_factor_WPSFD49207[] <- 1
-penalty_factor_CPIAUCSL <- numeric(ncol(expl_vars_CPIAUCSL))
-penalty_factor_CPIAUCSL[] <- 1
-penalty_factor_CPIULFSL <- numeric(ncol(expl_vars_CPIULFSL))
-penalty_factor_CPIULFSL[] <- 1
-penalty_factor_PCEPI <- numeric(ncol(expl_vars_PCEPI))
-penalty_factor_PCEPI[] <- 1
-
-# create a vector containing the names of the w variables
-w_economic_activity <- c("AWHMAN", "CUMFNS", "HOUST", "HWI", "GS10", "AMDMUOx")
-w_price_indices <- c("UNRATE", "HOUST", "AMDMNOx", "M1SL", "FEDFUNDS", "T1YFFM")
-
-# set the corresponding values in the penalty_factor to 0 (no penalization) for each dependent variable 
-for (col_name in names(expl_vars_RPI)) {
-  if (col_name %in% w_economic_activity) {
-    print("yes")
-    column_index <- which(names(expl_vars_RPI) == col_name)
-    penalty_factor_RPI[column_index] = 0
+# function to create a penalty factor depending on the explanatory variables and w set
+getPenalty <- function(expl_vars, w) {
+  penalty_factor <- numeric(ncol(expl_vars))
+  penalty_factor[] <- 1
+  for(col_name in names(expl_vars)) {
+    if(col_name %in% w) {
+      column_index <- which(names(expl_vars) == col_name)
+      penalty_factor[column_index] = 0
+    }
   }
-}
-print(penalty_factor_RPI)
-for (col_name in names(expl_vars_INDPRO)) {
-  if (col_name %in% w_economic_activity) {
-    column_index <- which(names(expl_vars_INDPRO) == col_name)
-    penalty_factor_INDPRO[column_index] = 0
-  }
-}
-print(penalty_factor_INDPRO)
-for (col_name in names(expl_vars_CMRMTSPLx)) {
-  if (col_name %in% w_economic_activity) {
-    column_index <- which(names(expl_vars_CMRMTSPLx) == col_name)
-    penalty_factor_CMRMTSPLx[column_index] = 0
-  }
-}
-print(penalty_factor_CMRMTSPLx)
-for (col_name in names(expl_vars_PAYEMS)) {
-  if (col_name %in% w_economic_activity) {
-    column_index <- which(names(expl_vars_PAYEMS) == col_name)
-    penalty_factor_PAYEMS[column_index] = 0
-  }
-}
-print(penalty_factor_PAYEMS)
-for (col_name in names(expl_vars_WPSFD49207)) {
-  if (col_name %in% w_price_indices) {
-    column_index <- which(names(expl_vars_WPSFD49207) == col_name)
-    penalty_factor_WPSFD49207[column_index] = 0
-  }
-}
-print(penalty_factor_WPSFD49207)
-for (col_name in names(expl_vars_CPIAUCSL)) {
-  if (col_name %in% w_price_indices) {
-    column_index <- which(names(expl_vars_CPIAUCSL) == col_name)
-    penalty_factor_CPIAUCSL[column_index] = 0
-  }
-}
-print(penalty_factor_WPSFD49207)
-for (col_name in names(expl_vars_CPIULFSL)) {
-  if (col_name %in% w_price_indices) {
-    column_index <- which(names(expl_vars_CPIULFSL) == col_name)
-    penalty_factor_CPIULFSL[column_index] = 0
-  }
-}
-print(penalty_factor_CPIULFSL)
-for (col_name in names(expl_vars_PCEPI)) {
-  if (col_name %in% w_price_indices) {
-    column_index <- which(names(expl_vars_PCEPI) == col_name)
-    penalty_factor_PCEPI[column_index] = 0
-  }
+  return (penalty_factor)
 }
 
+# for each dependent variable, create penalty factor
+penalty_factor_RPI <- getPenalty(expl_vars_RPI, w_economic_activity)
+penalty_factor_INDPRO <-  getPenalty(expl_vars_INDPRO, w_economic_activity)
+penalty_factor_CMRMTSPLx <-  getPenalty(expl_vars_CMRMTSPLx, w_economic_activity)
+penalty_factor_PAYEMS <- getPenalty(expl_vars_PAYEMS, w_economic_activity)
+penalty_factor_WPSFD49207 <- getPenalty(expl_vars_WPSFD49207, w_price_indices)
+penalty_factor_CPIAUCSL <- getPenalty(expl_vars_CPIAUCSL, w_price_indices)
+penalty_factor_CPIULFSL <- getPenalty(expl_vars_CPIULFSL, w_price_indices)
+penalty_factor_PCEPI <- getPenalty(expl_vars_PCEPI, w_price_indices)
 
+# create set x for each dependent variable
+expl_vars_without_w_RPI <- expl_vars_RPI[,!names(expl_vars_RPI) %in% w_economic_activity]
+expl_vars_without_w_INDPRO <- expl_vars_INDPRO[,!names(expl_vars_INDPRO) %in% w_economic_activity]
+expl_vars_without_w_CMRMTSPLx <- expl_vars_CMRMTSPLx[,!names(expl_vars_CMRMTSPLx) %in% w_economic_activity]
+expl_vars_without_w_PAYEMS <- expl_vars_PAYEMS[,!names(expl_vars_PAYEMS) %in% w_economic_activity]
+expl_vars_without_w_WPSFD49207 <- expl_vars_WPSFD49207[,!names(expl_vars_WPSFD49207) %in% w_price_indices]
+expl_vars_without_w_CPIAUCSL <- expl_vars_CPIAUCSL[,!names(expl_vars_CPIAUCSL) %in% w_price_indices]
+expl_vars_without_w_CPIULFSL <- expl_vars_CPIULFSL[,!names(expl_vars_CPIULFSL) %in% w_price_indices]
+expl_vars_without_w_PCEPI <- expl_vars_PCEPI[,!names(expl_vars_PCEPI) %in% w_price_indices]
+# create set w for each dependent variable
+w_RPI <- expl_vars_RPI[,names(expl_vars_RPI) %in% w_economic_activity]
+w_INDPRO <- expl_vars_INDPRO[,names(expl_vars_INDPRO) %in% w_economic_activity]
+w_CMRMTSPLx <- expl_vars_CMRMTSPLx[,names(expl_vars_CMRMTSPLx) %in% w_economic_activity]
+w_PAYEMS <- expl_vars_PAYEMS[,names(expl_vars_PAYEMS) %in% w_economic_activity]
+w_WPSFD49207 <- expl_vars_WPSFD49207[,names(expl_vars_WPSFD49207) %in% w_price_indices]
+w_CPIAUCSL <- expl_vars_CPIAUCSL[,names(expl_vars_CPIAUCSL) %in% w_price_indices]
+w_CPIULFSL <- expl_vars_CPIULFSL[,names(expl_vars_CPIULFSL) %in% w_price_indices]
+w_PCEPI <- expl_vars_PCEPI[,names(expl_vars_PCEPI) %in% w_price_indices]
 
 #### PCA ####
-k = 30 # number of factors we want to retrieve using PCA
+k = 10 # number of factors we want to retrieve using PCA
 
-# principal component analysis for RPI to get the factors
-pca_RPI <- prcomp(expl_vars_RPI, scale = TRUE) 
-loadings_RPI <- pca_RPI$rotation[,1:k]
-factors_RPI <- scale(expl_vars_RPI) %*% loadings_RPI
+# get factors out of only x (then factors and w merged)
+factors_and_w_RPI <- pca_factors_and_w(x=expl_vars_without_w_RPI, w=w_RPI)
+factors_and_w_INDPRO <- pca_factors_and_w(x=expl_vars_without_w_INDPRO, w=w_INDPRO)
+factors_and_w_CMRMTSPLx <- pca_factors_and_w(x=expl_vars_without_w_CMRMTSPLx, w=w_CMRMTSPLx)
+factors_and_w_PAYEMS <- pca_factors_and_w(x=expl_vars_without_w_PAYEMS, w=w_PAYEMS)
+factors_and_w_WPSFD49207 <- pca_factors_and_w(x=expl_vars_without_w_WPSFD49207, w=w_WPSFD49207)
+factors_and_w_CPIAUCSL <- pca_factors_and_w(x=expl_vars_without_w_CPIAUCSL, w=w_CPIAUCSL)
+factors_and_w_CPIULFSL <- pca_factors_and_w(x=expl_vars_without_w_CPIULFSL, w=w_CPIULFSL)
+factors_and_w_PCEPI <- pca_factors_and_w(x=expl_vars_without_w_PCEPI, w=w_PCEPI)
 
-# principal component analysis for INDPRO
-pca_INDPRO <- prcomp(expl_vars_INDPRO, scale = TRUE) 
-loadings_INDPRO <- pca_INDPRO$rotation[,1:k]
-factors_INDPRO <- scale(expl_vars_INDPRO) %*% loadings_INDPRO
-
-# principal component analysis for CMRMTSPLx
-pca_CMRMTSPLx <- prcomp(expl_vars_CMRMTSPLx, scale = TRUE) 
-loadings_CMRMTSPLx <- pca_CMRMTSPLx$rotation[,1:k]
-factors_CMRMTSPLx <- scale(expl_vars_CMRMTSPLx) %*% loadings_CMRMTSPLx
-
-# principal component analysis for PAYEMS
-pca_PAYEMS <- prcomp(expl_vars_PAYEMS, scale = TRUE) 
-loadings_PAYEMS <- pca_PAYEMS$rotation[,1:k]
-factors_PAYEMS <- scale(expl_vars_PAYEMS) %*% loadings_PAYEMS
-
-# principal component analysis for WPSFD49207
-pca_WPSFD49207 <- prcomp(expl_vars_WPSFD49207, scale =  TRUE) 
-loadings_WPSFD49207 <- pca_WPSFD49207$rotation[,1:k]
-factors_WPSFD49207 <- scale(expl_vars_WPSFD49207) %*% loadings_WPSFD49207
-
-# principal component analysis for CPIAUCSL
-pca_CPIAUCSL <- prcomp(expl_vars_CPIAUCSL, scale = TRUE) 
-loadings_CPIAUCSL <- pca_CPIAUCSL$rotation[,1:k]
-factors_CPIAUCSL <- scale(expl_vars_CPIAUCSL) %*% loadings_CPIAUCSL
-
-# principal component analysis for CPIULFSL
-pca_CPIULFSL <- prcomp(expl_vars_CPIULFSL, scale = TRUE) 
-loadings_CPIULFSL <- pca_CPIULFSL$rotation[,1:k]
-factors_CPIULFSL <- scale(expl_vars_CPIULFSL) %*% loadings_CPIULFSL
-
-# principal component analysis for PCEPI
-pca_PCEPI <- prcomp(expl_vars_PCEPI, scale = TRUE) 
-loadings_PCEPI <- pca_PCEPI$rotation[,1:k]
-factors_PCEPI <- scale(expl_vars_PCEPI) %*% loadings_PCEPI
-
-
-
-
-
-
-
-
+# get factors out of all explanatory variables
+# factors_RPI <- pca_factors(expl_vars_RPI)
+# factors_INDPRO <- pca_factors(expl_vars_INDPRO)
+# factors_CMRMTSPLx <- pca_factors(expl_vars_CMRMTSPLx)
+# factors_PAYEMS <- pca_factors(expl_vars_PAYEMS)
+# factors_WPSFD49207 <- pca_factors(expl_vars_WPSFD49207)
+# factors_CPIAUCSL <- pca_factors(expl_vars_CPIAUCSL)
+# factors_CPIULFSL <- pca_factors(expl_vars_CPIULFSL)
+# factors_PCEPI <- pca_factors(expl_vars_PCEPI)
 
 ##### Sparse PCA #####
 # for sparse pca we make use of default values: alpha = 1e-04, beta = 1e-04, max_iter = 1000 
 
-# sparse principal component analysis for RPI to get the factors.
-spca_RPI <- spca(expl_vars_RPI, scale = TRUE) 
-loadings_spca_RPI <- spca_RPI$loadings[,1:k]
-factors_spca_RPI <- scale(expl_vars_RPI) %*% loadings_spca_RPI
+# get factors out of only x (then factors and w merged)
+factors_and_w_spca_RPI <- spca_factors_and_w(x=expl_vars_without_w_RPI, w=w_RPI)
+factors_and_w_spca_INDPRO <- spca_factors_and_w(x=expl_vars_without_w_INDPRO, w=w_INDPRO)
+factors_and_w_spca_CMRMTSPLx <- spca_factors_and_w(x=expl_vars_without_w_CMRMTSPLx, w=w_CMRMTSPLx)
+factors_and_w_spca_PAYEMS <- spca_factors_and_w(x=expl_vars_without_w_PAYEMS, w=w_PAYEMS)
+factors_and_w_spca_WPSFD49207 <- spca_factors_and_w(x=expl_vars_without_w_WPSFD49207, w=w_WPSFD49207)
+factors_and_w_spca_CPIAUCSL <- spca_factors_and_w(x=expl_vars_without_w_CPIAUCSL, w=w_CPIAUCSL)
+factors_and_w_spca_CPIULFSL <- spca_factors_and_w(x=expl_vars_without_w_CPIULFSL, w=w_CPIULFSL)
+factors_and_w_spca_PCEPI <- spca_factors_and_w(x=expl_vars_without_w_PCEPI, w=w_PCEPI)
 
-# sparse principal component analysis for INDPRO 
-spca_INDPRO <- spca(expl_vars_INDPRO, scale = TRUE) 
-loadings_spca_INDPRO <- spca_INDPRO$loadings[,1:k]
-factors_spca_INDPRO <- scale(expl_vars_INDPRO) %*% loadings_spca_INDPRO
-
-# sparse principal component analysis for CMRMTSPLx 
-spca_CMRMTSPLx <- spca(expl_vars_CMRMTSPLx, scale = TRUE) 
-loadings_spca_CMRMTSPLx <- spca_CMRMTSPLx$loadings[,1:k]
-factors_spca_CMRMTSPLx <- scale(expl_vars_CMRMTSPLx) %*% loadings_spca_CMRMTSPLx
-
-# sparse principal component analysis for PAYEMS 
-spca_PAYEMS <- spca(expl_vars_PAYEMS, scale = TRUE) 
-loadings_spca_PAYEMS <- spca_PAYEMS$loadings[,1:k]
-factors_spca_PAYEMS <- scale(expl_vars_PAYEMS) %*% loadings_spca_PAYEMS
-
-# sparse principal component analysis for PAYEMS 
-spca_WPSFD49207 <- spca(expl_vars_WPSFD49207, scale = TRUE) 
-loadings_spca_WPSFD49207 <- spca_WPSFD49207$loadings[,1:k]
-factors_spca_WPSFD49207 <- scale(expl_vars_WPSFD49207) %*% loadings_spca_WPSFD49207
-
-# sparse principal component analysis for CPIAUCSL 
-spca_CPIAUCSL <- spca(expl_vars_CPIAUCSL, scale = TRUE) 
-loadings_spca_CPIAUCSL <- spca_CPIAUCSL$loadings[,1:k]
-factors_spca_CPIAUCSL <- scale(expl_vars_CPIAUCSL) %*% loadings_spca_CPIAUCSL
-
-# sparse principal component analysis for CPIULFSL 
-spca_CPIULFSL <- spca(expl_vars_CPIULFSL, scale = TRUE) 
-loadings_spca_CPIULFSL <- spca_CPIULFSL$loadings[,1:k]
-factors_spca_CPIULFSL <- scale(expl_vars_CPIULFSL) %*% loadings_spca_CPIULFSL
-
-# sparse principal component analysis for PCEPI 
-spca_PCEPI <- spca(expl_vars_PCEPI, scale = TRUE) 
-loadings_spca_PCEPI <- spca_PCEPI$loadings[,1:k]
-factors_spca_PCEPI <- scale(expl_vars_PCEPI) %*% loadings_spca_PCEPI
-
+# get factors out of all explanatory variables
+# factors_spca_RPI <- spca_factors(expl_vars_RPI)
+# factors_spca_INDPRO <- spca_factors(expl_vars_INDPRO)
+# factors_spca_CMRMTSPLx <- spca_factors(expl_vars_CMRMTSPLx)
+# factors_spca_PAYEMS <- spca_factors(expl_vars_PAYEMS)
+# factors_spca_WPSFD49207 <- spca_factors(expl_vars_WPSFD49207)
+# factors_spca_CPIAUCSL <- spca_factors(expl_vars_CPIAUCSL)
+# factors_spca_CPIULFSL <- spca_factors(expl_vars_CPIULFSL)
+# factors_spca_PCEPI <- spca_factors(expl_vars_PCEPI)
 
 ##### LA(PC) #####
 
-factors_lapc_RPI <- lapc_factors(x=expl_vars_RPI,y=dependent_vars_data$RPI)
-factors_lapc_INDPRO <- lapc_factors(x=expl_vars_INDPRO,y=dependent_vars_data$INDPRO)
-factors_lapc_CMRMTSPLx <- lapc_factors(x=expl_vars_CMRMTSPLx, y=dependent_vars_data$CMRMTSPLx)
-factors_lapc_PAYEMS <- lapc_factors(x=expl_vars_PAYEMS, y=dependent_vars_data$PAYEMS)
-factors_lapc_WPSFD49207 <- lapc_factors(x=expl_vars_WPSFD49207, y=dependent_vars_data$WPSFD49207)
-factors_lapc_CPIAUCSL <- lapc_factors(x=expl_vars_CPIAUCSL, y=dependent_vars_data$CPIAUCSL)
-factors_lapc_CPIULFSL <- lapc_factors(x=expl_vars_CPIULFSL, y=dependent_vars_data$CPIULFSL)
-factors_lapc_PCEPI <- lapc_factors(x=expl_vars_PCEPI, y=dependent_vars_data$PCEPI)
+# get factors out of only x (then factors and w merged)
+factors_and_w_lapc_RPI <- lapc_factors_and_w(x=expl_vars_without_w_RPI,y=dependent_vars_data$RPI,w=w_RPI)
+factors_and_w_lapc_INDPRO <- lapc_factors_and_w(x=expl_vars_without_w_INDPRO,y=dependent_vars_data$INDPRO, w=w_INDPRO)
+factors_and_w_lapc_CMRMTSPLx <- lapc_factors_and_w(x=expl_vars_without_w_CMRMTSPLx, y=dependent_vars_data$CMRMTSPLx, w=w_CMRMTSPLx)
+factors_and_w_lapc_PAYEMS <- lapc_factors_and_w(x=expl_vars_without_w_PAYEMS, y=dependent_vars_data$PAYEMS, w=w_PAYEMS)
+factors_and_w_lapc_WPSFD49207 <- lapc_factors_and_w(x=expl_vars_without_w_WPSFD49207, y=dependent_vars_data$WPSFD49207, w=w_WPSFD49207)
+factors_and_w_lapc_CPIAUCSL <- lapc_factors_and_w(x=expl_vars_without_w_CPIAUCSL, y=dependent_vars_data$CPIAUCSL, w=w_CPIAUCSL)
+factors_and_w_lapc_CPIULFSL <- lapc_factors_and_w(x=expl_vars_without_w_CPIULFSL, y=dependent_vars_data$CPIULFSL, w=w_CPIULFSL)
+factors_and_w_lapc_PCEPI <- lapc_factors_and_w(x=expl_vars_without_w_PCEPI, y=dependent_vars_data$PCEPI, w=w_PCEPI)
+
+# get factors out of all explanatory variables
+# factors_lapc_RPI <- lapc_factors(x=expl_vars_RPI,y=dependent_vars_data$RPI)
+# factors_lapc_INDPRO <- lapc_factors(x=expl_vars_INDPRO,y=dependent_vars_data$INDPRO)
+# factors_lapc_CMRMTSPLx <- lapc_factors(x=expl_vars_CMRMTSPLx, y=dependent_vars_data$CMRMTSPLx)
+# factors_lapc_PAYEMS <- lapc_factors(x=expl_vars_PAYEMS, y=dependent_vars_data$PAYEMS)
+# factors_lapc_WPSFD49207 <- lapc_factors(x=expl_vars_WPSFD49207, y=dependent_vars_data$WPSFD49207)
+# factors_lapc_CPIAUCSL <- lapc_factors(x=expl_vars_CPIAUCSL, y=dependent_vars_data$CPIAUCSL)
+# factors_lapc_CPIULFSL <- lapc_factors(x=expl_vars_CPIULFSL, y=dependent_vars_data$CPIULFSL)
+# factors_lapc_PCEPI <- lapc_factors(x=expl_vars_PCEPI, y=dependent_vars_data$PCEPI)
 
 
+
+#### AR ####
+
+best_lag_RPI <- AR_model(expl_vars_RPI, dependent_var_RPI)
+best_lag_INDPRO <- AR_model(expl_vars_CMRMTSPLxars_INDPRO, dependent_var_INDPRO)
+best_lag_CMRMTSPLx  <- AR_model(expl_vars_CMRMTSPLx, dependent_var_CMRMTSPLx)
+best_lag_PAYEMS     <- AR_model(expl_vars_PAYEMS, dependent_var_PAYEMS)
+best_lag_WPSFD49207 <- AR_model(expl_vars_WPSFD49207, dependent_var_WPSFD49207)
+best_lag_CPIAUCSL <- AR_model(expl_vars_CPIAUCSL, dependent_var_CPIAUCSL)
+best_lag_CPIULFSL <- AR_model(expl_vars_CPIULFSL, dependent_var_CPIULFSL)
+best_lag_PCEPI <- AR_model(expl_vars_PCEPI, dependent_var_PCEPI)
 
 
 
@@ -389,10 +327,10 @@ error_PCA <- RollingWindowNew(as.data.frame(dependent_var_RPI), as.data.frame(fa
 error_SPCA <- RollingWindowNew(as.data.frame(dependent_var_RPI), as.data.frame(factors_spca_RPI), method=spca)
 error_LAPC <- RollingWindowNew(as.data.frame(dependent_var_RPI), as.data.frame(factors_lapc_RPI), method=lapc)
 
+ar <- "AR"
 
-# error_AR <- RollingWindow(dependentVar, ar)
+error_AR <- RollingWindowNew(as.data.frame(dependent_var_RPI), as.data.frame(expl_vars_RPI), method=ar, lag=best_lag_RPI)
 
-# error_AdaptiveLasso <- RollingWindow(dependentVar, AdaptiveLasso)
 
 print(paste("Lasso MSE over rolling window is:", error_Lasso))
 print(paste("Ridge MSE over rolling window is:", error_Ridge))
@@ -401,6 +339,6 @@ print(paste("Adaptive Lasso MSE over rolling window is:", error_AdaptiveLasso))
 print(paste("PCA MSE over rolling window is:", error_PCA))
 print(paste("SPCA MSE over rolling window is:", error_SPCA))
 print(paste("LAPC MSE over rolling window is:", error_LAPC))
-# print(paste("AR MSE over rolling window is:", error_AR))
+print(paste("AR MSE over rolling window is:", error_AR))
 
 # print(paste("Adaptive Lasso MSE over rolling window is:", error_AdaptiveLasso))

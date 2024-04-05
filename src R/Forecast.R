@@ -11,7 +11,7 @@ MSE = function(y, x, coef, intercept) {
 }
 
 
-RollingWindowNew = function(dependent_var, explanatory_vars_data, method, lambda= 1, alpha = 0.5, penalty=NULL) {
+RollingWindowNew = function(dependent_var, explanatory_vars_data, method, lambda= 1, alpha = 0.5, penalty=NULL, lag=1) {
   totalError <- 0
   numberOfWindows <- 0
   
@@ -51,7 +51,6 @@ RollingWindowNew = function(dependent_var, explanatory_vars_data, method, lambda
     } else if (method == "LAPC") {
       model <- NULL
     } else if (method == "AR") {
-      # Implement AR model
       model <- NULL
     } else if (method == "AdaptiveLasso") {
       model1 <- glmnet(x_train, y_train, alpha = 0, lambda = lambda, penalty.factor = penalty)
@@ -85,6 +84,17 @@ RollingWindowNew = function(dependent_var, explanatory_vars_data, method, lambda
       coef <- as.data.frame(model$coefficients)
       
       totalError <- totalError + MSE(y_test, x_test, coef, intercept)
+      
+    } else if (method %in% c("AR")){
+      
+      model <- Arima(dependent_var, order = c(lag,0,0), include.mean = FALSE)
+      
+      intercept = 0
+      coef = as.data.frame(coef(model))
+      
+      nrow <- nrow(y_train)
+      
+      totalError <- totalError + MSE(y_test, y_train[(nrow - lag):nrow, ], coef, intercept)
       
     } else {
       
