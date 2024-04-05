@@ -5,29 +5,25 @@ getForecastCombination <- function(y, forecasts, type="equal"){
   ### 
   ### y: dependent variable to get forecast combination for
   ### forecasts:data frame of forecasts (columns are the different forecasts),
-  ###     can be one of: "equal", "ols", "lasso" or "ridge"
   ### type: string containing the type of forecast combination
+  ###     can be one of: "equal", "ols", "lasso" or "ridge"
   ###
-  ### returns the forecast combination 
+  ### returns the forecast combination weights including intercept 
   if (type == "equal") {
     # forecast combination of equal weights
     foreComb <- foreccomb(observed_vector = y, prediction_matrix = as.matrix(forecasts))
     forecast <- comb_SA(foreComb)
-    return(forecast$Fitted)
+    return(forecast$Weights)
   } else if (type == "ols") {
     foreComb <- foreccomb(observed_vector = y, prediction_matrix = as.matrix(forecasts))
     forecast <- comb_OLS(foreComb)
-    return(forecast$Fitted)
+    return(forecast$Weights)
   } else if (type == "lasso") {
-    model <- glmnet(forecasts, y, alpha = 1, lambda=1, intercept = FALSE)
-    print(coef(model))
-    forecast <- predict(model, as.matrix(forecasts))
-    return (forecast)
+    model <- glmnet(forecasts, y, alpha = 1, lambda=1)
+    return (coef(model))
   } else if (type == "ridge") {
-    model <- glmnet(forecasts, y, alpha = 0, lambda=1, intercept = FALSE)
-    print(coef(model))
-    forecast <- predict(model, as.matrix(forecasts))
-    return (forecast)
+    model <- glmnet(forecasts, y, alpha = 0, lambda=1)
+    return (coef(model))
   } else {
     stop("Error: invalid type of forecast combination, try: equal, ols, lasso or ridge")
   }
@@ -44,11 +40,9 @@ df <- data.frame(
 )
 
 forecomb <- getForecastCombination(y=y, forecasts = df, type="ols")
-print(forecomb$Fitted)
-print(forecomb$Weights)
+print(forecomb)
 forecomb2 <- getForecastCombination(y=y, forecasts = df)
-print(forecomb2$Fitted)
-print(forecomb2$Weights)
+print(forecomb2)
 forecomb3 <- getForecastCombination(y=y,forecasts = df, type="lasso")
 print(forecomb3)
 forecomb4 <- getForecastCombination(y=y, forecasts = df, type = "ridge")
