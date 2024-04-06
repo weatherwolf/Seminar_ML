@@ -14,37 +14,18 @@ getForecastCombination <- function(y, forecasts, type="equal"){
     foreComb <- foreccomb(observed_vector = y, prediction_matrix = as.matrix(forecasts))
     forecast <- comb_SA(foreComb)
     return(forecast$Weights)
-  } else if (type == "ols") {
+  } else if (type == "Ols") {
     foreComb <- foreccomb(observed_vector = y, prediction_matrix = as.matrix(forecasts))
     forecast <- comb_OLS(foreComb)
     return(forecast$Weights)
-  } else if (type == "lasso") {
-    model <- glmnet(forecasts, y, alpha = 1, lambda=1)
-    return (coef(model))
-  } else if (type == "ridge") {
-    model <- glmnet(forecasts, y, alpha = 0, lambda=1)
-    return (coef(model))
+  } else if (type == "Lasso") {
+    model <- glmnet(forecasts, y, alpha = 1, lambda=1, intercept=FALSE)
+    return (coef(model)[-1])
+  } else if (type == "Ridge") {
+    model <- glmnet(forecasts, y, alpha = 0, lambda=1, intercept=FALSE)
+    return (coef(model)[-1])
   } else {
-    stop("Error: invalid type of forecast combination, try: equal, ols, lasso or ridge")
+    stop("Error: invalid type of forecast combination, try: equal, Ols, Lasso or Ridge")
   }
   
-
 }
-
-y <- c(0.3,0.27,0.33,0.44)
-df <- data.frame(
-  A = c(0.2, 0.4, 0.3, 0.5),
-  B = c(0.32, 0.3, 0.4, 0.5),
-  C = c(0.4, 0.35, 0.2, 0.4),
-  D = c(0.4, 0.4, 0.15, 0.4)
-)
-
-forecomb <- getForecastCombination(y=y, forecasts = df, type="ols")
-print(forecomb)
-forecomb2 <- getForecastCombination(y=y, forecasts = df)
-print(forecomb2)
-forecomb3 <- getForecastCombination(y=y,forecasts = df, type="lasso")
-print(forecomb3)
-forecomb4 <- getForecastCombination(y=y, forecasts = df, type = "ridge")
-print(forecomb4)
-

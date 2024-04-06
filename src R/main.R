@@ -11,6 +11,7 @@ source("Tuning.R")
 source("SparsePCA.R")
 source("LA(PC).R")
 source("PrincipalComponent.R")
+source("ForecastCombinations.R")
 
 
 # Select parameters
@@ -308,28 +309,36 @@ alphaList <- seq(0.1, 0.9, by = 0.1)
 # Tuning
 #lags <- TuningLags(data, dependentVar)
 
+dependent_var = as.data.frame(dependent_var_RPI)
+expl_var = as.data.frame(expl_vars_RPI)
+penalty = penalty_factor_RPI
+factors_PCA = as.data.frame(factors_and_w_RPI)
+factors_SPCA = as.data.frame(factors_and_w_spca_RPI)
+factors_LAPC = as.data.frame(factors_and_w_lapc_RPI)
+lag = best_lag_RPI
+
 
 lasso <- "Lasso"
 ridge <- "Ridge"
 elasticNet <- "ElasticNet"
 adaptiveLasso <- "AdaptiveLasso"
 
-error_Lasso <- RollingWindowNew(as.data.frame(dependent_var_RPI), as.data.frame(expl_vars_RPI), method=lasso, penalty=penalty_factor_RPI)
-error_Ridge <- RollingWindowNew(as.data.frame(dependent_var_RPI), as.data.frame(expl_vars_RPI), method=ridge, penalty=penalty_factor_RPI)
-error_ElasticNet <- RollingWindowNew(as.data.frame(dependent_var_RPI), as.data.frame(expl_vars_RPI), method=elasticNet, alpha=0.01, penalty=penalty_factor_RPI)
-error_AdaptiveLasso <- RollingWindowNew(as.data.frame(dependent_var_RPI), as.data.frame(expl_vars_RPI), method=adaptiveLasso, penalty=penalty_factor_RPI)
+error_Lasso <- RollingWindowNew(dependent_var, expl_var, method=lasso, penalty=penalty)
+error_Ridge <- RollingWindowNew(dependent_var, expl_var, method=ridge, penalty=penalty)
+error_ElasticNet <- RollingWindowNew(dependent_var, expl_var, method=elasticNet, alpha=0.01, penalty=penalty)
+error_AdaptiveLasso <- RollingWindowNew(dependent_var, expl_var, method=adaptiveLasso, penalty=penalty)
 
 pca <- "PCA"
 spca <- "SPCA"
 lapc <- "LAPC"
 
-error_PCA <- RollingWindowNew(as.data.frame(dependent_var_RPI), as.data.frame(factors_RPI), method=pca)
-error_SPCA <- RollingWindowNew(as.data.frame(dependent_var_RPI), as.data.frame(factors_spca_RPI), method=spca)
-error_LAPC <- RollingWindowNew(as.data.frame(dependent_var_RPI), as.data.frame(factors_lapc_RPI), method=lapc)
+error_PCA <- RollingWindowNew(dependent_var, factors_PCA, method=pca)
+error_SPCA <- RollingWindowNew(dependent_var, factors_SPCA, method=spca)
+error_LAPC <- RollingWindowNew(dependent_var, factors_LAPC, method=lapc)
 
 ar <- "AR"
 
-error_AR <- RollingWindowNew(as.data.frame(dependent_var_RPI), as.data.frame(expl_vars_RPI), method=ar, lag=best_lag_RPI)
+error_AR <- RollingWindowNew(dependent_var, expl_var, method=ar, lag=lag)
 
 
 print(paste("Lasso MSE over rolling window is:", error_Lasso))
@@ -341,4 +350,27 @@ print(paste("SPCA MSE over rolling window is:", error_SPCA))
 print(paste("LAPC MSE over rolling window is:", error_LAPC))
 print(paste("AR MSE over rolling window is:", error_AR))
 
-# print(paste("Adaptive Lasso MSE over rolling window is:", error_AdaptiveLasso))
+source("Dataprocessor.R")
+source("Forecast.R")
+source("Model.R")
+source("Tuning.R")
+source("ForecastCombinations.R")
+
+error_forecast_combination_Equal <- RollingWindowForecastCombination(dependent_var, expl_var, penalty=penalty, factors_PCA=factors_PCA, 
+                                                               factors_SPCA=factors_SPCA, factors_LAPC=factors_LAPC, lag=best_lag_RPI, method="equal")
+
+error_forecast_combination_OLS <- RollingWindowForecastCombination(dependent_var, expl_var, penalty=penalty, factors_PCA=factors_PCA, 
+                                                               factors_SPCA=factors_SPCA, factors_LAPC=factors_LAPC, lag=best_lag_RPI, method="Ols")
+
+error_forecast_combination_Lasso <- RollingWindowForecastCombination(dependent_var, expl_var, penalty=penalty, factors_PCA=factors_PCA, 
+                                                               factors_SPCA=factors_SPCA, factors_LAPC=factors_LAPC, lag=best_lag_RPI, method="Lasso")
+
+error_forecast_combination_Ridge <- RollingWindowForecastCombination(dependent_var, expl_var, penalty=penalty, factors_PCA=factors_PCA, 
+                                                               factors_SPCA=factors_SPCA, factors_LAPC=factors_LAPC, lag=best_lag_RPI, method="Ridge")
+
+print(paste("Forecast combination Equal MSE over rolling window is:", error_forecast_combination_Equal))
+print(paste("Forecast combination OLS MSE over rolling window is:", error_forecast_combination_OLS))
+print(paste("Forecast combination Lasso MSE over rolling window is:", error_forecast_combination_Lasso))
+print(paste("Forecast combination Ridge MSE over rolling window is:", error_forecast_combination_Ridge))
+
+
