@@ -2,6 +2,10 @@ library(stats)
 library(data.table)
 library(glmnet)
 library(R6)
+library(forecast)
+library(BreakPoints)
+library(strucchange)
+library(changepoint)
 
 # Load custom functions from R scripts
 source("Dataprocessor.R")
@@ -298,6 +302,249 @@ best_lag_PCEPI <- AR_model(expl_vars_PCEPI, dependent_var_PCEPI)
 
 
 
+########################################################################
+#### Create non-stationary data for structural break point analyses ####
+########################################################################
+
+data_non_stationary <- data_trimmed
+dependent_vars <- c("RPI", "INDPRO", "CMRMTSPLx", "PAYEMS", "WPSFD49207", "CPIAUCSL", "CPIULFSL", "PCEPI")
+
+dependent_vars_ns <- data_non_stationary[, dependent_vars]
+explanatory_vars_ns <- data_non_stationary[,!names(data_non_stationary) %in% dependent_vars]
+
+
+dependent_var_RPI_ns <- dependent_vars_ns$RPI
+dependent_var_INDPRO_ns <- dependent_vars_ns$INDPRO
+dependent_var_CMRMTSPLx_ns <- dependent_vars_ns$CMRMTSPLx
+dependent_var_PAYEMS_ns <- dependent_vars_ns$PAYEMS
+dependent_var_WPSFD49207_ns <- dependent_vars_ns$WPSFD49207
+dependent_var_CPIAUCSL_ns <- dependent_vars_ns$CPIAUCSL
+dependent_var_CPIULFSL_ns <- dependent_vars_ns$CPIULFSL
+dependent_var_PCEPI_ns <- dependent_vars_ns$PCEPI
+
+
+# Function to obtain the observation numbers of the best breakpoints
+test_breakpoints <- function(y, max_breakpoints = 5) {
+  length_var <- length(y)
+  trend <- 1:length_var
+  bic_values <- numeric(max_breakpoints)
+  breakpoints_list <- list()
+  
+  for (i in 1:max_breakpoints) {
+    model <- breakpoints(y ~ trend, breaks = i)
+    bic_values[i] <- BIC(model)
+    breakpoints_list[[i]] <- breakpoints(model)$breakpoints  
+  }
+  
+  best_num_breakpoints <- which.min(bic_values)
+  best_breakpoints <- breakpoints_list[[best_num_breakpoints]]
+  
+  return(best_breakpoints)  
+}
+
+# Run for all dependent variables non stationary
+bp_RPI <- test_breakpoints(dependent_var_RPI_ns)
+bp_INDPRO <- test_breakpoints(dependent_var_INDPRO_ns)
+bp_CMRMTSPLx <- test_breakpoints(dependent_var_CMRMTSPLx_ns)
+bp_PAYEMS <- test_breakpoints(dependent_var_PAYEMS_ns)
+bp_WPSFD49207 <- test_breakpoints(dependent_var_WPSFD49207_ns)
+bp_CPIAUCSL <- test_breakpoints(dependent_var_CPIAUCSL_ns)
+bp_CPIULFSL <- test_breakpoints(dependent_var_CPIULFSL_ns)
+bp_PCEPI<- test_breakpoints(dependent_var_PCEPI_ns)
+
+
+# preparation work for the check of correlations between the dependent variable and the explanatory variables
+correlations_ns <- data.frame(matrix(ncol = ncol(dependent_vars_ns), nrow = ncol(explanatory_vars_ns)))
+colnames(correlations_ns) <- names(dependent_vars_ns)
+rownames(correlations_ns) <- names(explanatory_vars_ns)
+# create a vector containing the names of the w variables
+w_economic_activity <- c("AWHMAN", "CUMFNS", "HOUST", "HWI", "GS10", "AMDMUOx")
+w_price_indices <- c("UNRATE", "HOUST", "AMDMNOx", "M1SL", "FEDFUNDS", "T1YFFM")
+# for each dependent variable, create vector that contains the highly correlated variables
+highly_cor_RPI_ns <- c()
+highly_cor_INDPRO_ns <- c()
+highly_cor_CMRMTSPLx_ns <- c()
+highly_cor_PAYEMS_ns <- c()
+highly_cor_WPSFD49207_ns <- c()
+highly_cor_CPIAUCSL_ns <- c()
+highly_cor_CPIULFSL_ns <- c()
+highly_cor_PCEPI_ns <- c()
+value_cor = 0.5 # value to determine when it's highly correlated
+# calculate correlations and save highly correlated variables in the corresponding vector
+for (col_name in names(dependent_vars_ns)) {
+  dependent_var = dependent_vars_ns[col_name]
+  data = explanatory_vars_ns
+  data <- cbind(dependent_var, data)
+  correlation_matrix <- cor(data)
+  dependent_var_cor <- cbind(correlation_matrix[1, -1]) # all correlations of the dependent variable with the explanatory variables, excluding the correlation with itself
+  correlations[col_name] <- dependent_var_cor
+  for (cor in dependent_var_cor){
+    if(cor > value_cor || cor < - value_cor) {
+      if (col_name == "RPI") {
+        # Find the index of the current value in the vector
+        index <- which(dependent_var_cor == cor)
+        # Get the corresponding row name using the index
+        row_name <- rownames(correlations_ns)[index]
+        highly_cor_RPI_ns <- c(highly_cor_RPI_ns, row_name)
+      } else if (col_name == "INDPRO") {
+        index <- which(dependent_var_cor == cor)
+        row_name <- rownames(correlations_ns)[index]
+        highly_cor_INDPRO_ns <- c(highly_cor_INDPRO_ns, row_name)
+      } else if (col_name == "CMRMTSPLx") {
+        index <- which(dependent_var_cor == cor)
+        row_name <- rownames(correlations_ns)[index]
+        highly_cor_CMRMTSPLx_ns <- c(highly_cor_CMRMTSPLx_ns, row_name)
+      } else if (col_name == "PAYEMS") {
+        index <- which(dependent_var_cor == cor)
+        row_name <- rownames(correlations_ns)[index]
+        highly_cor_PAYEMS_ns <- c(highly_cor_PAYEMS_ns, row_name)
+      } else if (col_name == "WPSFD49207") {
+        index <- which(dependent_var_cor == cor)
+        row_name <- rownames(correlations_ns)[index]
+        highly_cor_WPSFD49207_ns <- c(highly_cor_WPSFD49207_ns, row_name)
+      } else if (col_name == "CPIAUCSL") {
+        index <- which(dependent_var_cor == cor)
+        row_name <- rownames(correlations_ns)[index]
+        highly_cor_CPIAUCSL_ns <- c(highly_cor_CPIAUCSL_ns, row_name)
+      } else if (col_name == "CPIULFSL") {
+        index <- which(dependent_var_cor == cor)
+        row_name <- rownames(correlations_ns)[index]
+        highly_cor_CPIULFSL_ns <- c(highly_cor_CPIULFSL_ns, row_name)
+      } else {
+        index <- which(dependent_var_cor == cor)
+        row_name <- rownames(correlations_ns)[index]
+        highly_cor_PCEPI_ns <- c(highly_cor_PCEPI_ns, row_name)
+      }
+    }
+  }
+}
+
+dependent_var_RPI_ns <- dependent_vars_ns$RPI
+dependent_var_INDPRO_ns <- dependent_vars_ns$INDPRO
+dependent_var_CMRMTSPLx_ns <- dependent_vars_ns$CMRMTSPLx
+dependent_var_PAYEMS_ns <- dependent_vars_ns$PAYEMS
+dependent_var_WPSFD49207_ns <- dependent_vars_ns$WPSFD49207
+dependent_var_CPIAUCSL_ns <- dependent_vars_ns$CPIAUCSL
+dependent_var_CPIULFSL_ns <- dependent_vars_ns$CPIULFSL
+dependent_var_PCEPI_ns <- dependent_vars_ns$PCEPI
+
+
+# for each dependent variable, create a data set containing the corresponding explanatory variables
+expl_vars_RPI_ns <- explanatory_vars_ns[,!names(explanatory_vars_ns) %in% highly_cor_RPI_ns]
+expl_vars_INDPRO_ns <- explanatory_vars_ns[,!names(explanatory_vars_ns) %in% highly_cor_INDPRO_ns]
+expl_vars_CMRMTSPLx_ns <- explanatory_vars_ns[,!names(explanatory_vars_ns) %in% highly_cor_CMRMTSPLx_ns]
+expl_vars_PAYEMS_ns <- explanatory_vars_ns[,!names(explanatory_vars_ns) %in% highly_cor_PAYEMS_ns]
+expl_vars_WPSFD49207_ns <- explanatory_vars_ns[,!names(explanatory_vars_ns) %in% highly_cor_WPSFD49207_ns]
+expl_vars_CPIAUCSL_ns <- explanatory_vars_ns[,!names(explanatory_vars_ns) %in% highly_cor_CPIAUCSL_ns]
+expl_vars_CPIULFSL_ns <- explanatory_vars_ns[,!names(explanatory_vars_ns) %in% highly_cor_CPIULFSL_ns]
+expl_vars_PCEPI_ns <- explanatory_vars_ns[,!names(explanatory_vars_ns) %in% highly_cor_PCEPI_ns]
+
+
+# for each dependent variable, create penalty factor
+penalty_factor_RPI_ns <- getPenalty(expl_vars_RPI_ns, w_economic_activity)
+penalty_factor_INDPRO_ns <-  getPenalty(expl_vars_INDPRO_ns, w_economic_activity)
+penalty_factor_CMRMTSPLx_ns <-  getPenalty(expl_vars_CMRMTSPLx_ns, w_economic_activity)
+penalty_factor_PAYEMS_ns <- getPenalty(expl_vars_PAYEMS_ns, w_economic_activity)
+penalty_factor_WPSFD49207_ns <- getPenalty(expl_vars_WPSFD49207_ns, w_price_indices)
+penalty_factor_CPIAUCSL_ns <- getPenalty(expl_vars_CPIAUCSL_ns, w_price_indices)
+penalty_factor_CPIULFSL_ns <- getPenalty(expl_vars_CPIULFSL_ns, w_price_indices)
+penalty_factor_PCEPI_ns <- getPenalty(expl_vars_PCEPI_ns, w_price_indices)
+
+# create set x for each dependent variable
+expl_vars_without_w_RPI_ns <- expl_vars_RPI_ns[,!names(expl_vars_RPI_ns) %in% w_economic_activity]
+expl_vars_without_w_INDPRO_ns <- expl_vars_INDPRO_ns[,!names(expl_vars_INDPRO_ns) %in% w_economic_activity]
+expl_vars_without_w_CMRMTSPLx_ns <- expl_vars_CMRMTSPLx_ns[,!names(expl_vars_CMRMTSPLx_ns) %in% w_economic_activity]
+expl_vars_without_w_PAYEMS_ns <- expl_vars_PAYEMS_ns[,!names(expl_vars_PAYEMS_ns) %in% w_economic_activity]
+expl_vars_without_w_WPSFD49207_ns <- expl_vars_WPSFD49207_ns[,!names(expl_vars_WPSFD49207_ns) %in% w_price_indices]
+expl_vars_without_w_CPIAUCSL_ns <- expl_vars_CPIAUCSL_ns[,!names(expl_vars_CPIAUCSL_ns) %in% w_price_indices]
+expl_vars_without_w_CPIULFSL_ns <- expl_vars_CPIULFSL_ns[,!names(expl_vars_CPIULFSL_ns) %in% w_price_indices]
+expl_vars_without_w_PCEPI_ns <- expl_vars_PCEPI_ns[,!names(expl_vars_PCEPI_ns) %in% w_price_indices]
+
+# create set w for each dependent variable
+w_RPI_ns <- expl_vars_RPI_ns[,names(expl_vars_RPI_ns) %in% w_economic_activity]
+w_INDPRO_ns <- expl_vars_INDPRO_ns[,names(expl_vars_INDPRO_ns) %in% w_economic_activity]
+w_CMRMTSPLx_ns <- expl_vars_CMRMTSPLx_ns[,names(expl_vars_CMRMTSPLx_ns) %in% w_economic_activity]
+w_PAYEMS_ns <- expl_vars_PAYEMS_ns[,names(expl_vars_PAYEMS_ns) %in% w_economic_activity]
+w_WPSFD49207_ns <- expl_vars_WPSFD49207_ns[,names(expl_vars_WPSFD49207_ns) %in% w_price_indices]
+w_CPIAUCSL_ns <- expl_vars_CPIAUCSL_ns[,names(expl_vars_CPIAUCSL_ns) %in% w_price_indices]
+w_CPIULFSL_ns <- expl_vars_CPIULFSL_ns[,names(expl_vars_CPIULFSL_ns) %in% w_price_indices]
+w_PCEPI_ns <- expl_vars_PCEPI_ns[,names(expl_vars_PCEPI_ns) %in% w_price_indices]
+
+
+
+# get factors out of only x (then factors and w merged)
+factors_and_w_RPI_ns <- pca_factors_and_w(x=expl_vars_without_w_RPI_ns, w=w_RPI_ns)
+factors_and_w_INDPRO_ns <- pca_factors_and_w(x=expl_vars_without_w_INDPRO_ns, w=w_INDPRO_ns)
+factors_and_w_CMRMTSPLx_ns <- pca_factors_and_w(x=expl_vars_without_w_CMRMTSPLx_ns, w=w_CMRMTSPLx_ns)
+factors_and_w_PAYEMS_ns <- pca_factors_and_w(x=expl_vars_without_w_PAYEMS_ns, w=w_PAYEMS_ns)
+factors_and_w_WPSFD49207_ns <- pca_factors_and_w(x=expl_vars_without_w_WPSFD49207_ns, w=w_WPSFD49207_ns)
+factors_and_w_CPIAUCSL_ns <- pca_factors_and_w(x=expl_vars_without_w_CPIAUCSL_ns, w=w_CPIAUCSL_ns)
+factors_and_w_CPIULFSL_ns <- pca_factors_and_w(x=expl_vars_without_w_CPIULFSL_ns, w=w_CPIULFSL_ns)
+factors_and_w_PCEPI_ns <- pca_factors_and_w(x=expl_vars_without_w_PCEPI_ns, w=w_PCEPI_ns)
+
+# get factors out of all explanatory variables
+# factors_RPI <- pca_factors(expl_vars_RPI)
+# factors_INDPRO <- pca_factors(expl_vars_INDPRO)
+# factors_CMRMTSPLx <- pca_factors(expl_vars_CMRMTSPLx)
+# factors_PAYEMS <- pca_factors(expl_vars_PAYEMS)
+# factors_WPSFD49207 <- pca_factors(expl_vars_WPSFD49207)
+# factors_CPIAUCSL <- pca_factors(expl_vars_CPIAUCSL)
+# factors_CPIULFSL <- pca_factors(expl_vars_CPIULFSL)
+# factors_PCEPI <- pca_factors(expl_vars_PCEPI)
+
+##### Sparse PCA #####
+# for sparse pca we make use of default values: alpha = 1e-04, beta = 1e-04, max_iter = 1000 
+
+# get factors out of only x (then factors and w merged)
+factors_and_w_spca_RPI_ns <- spca_factors_and_w(x=expl_vars_without_w_RPI_ns, w=w_RPI_ns)
+factors_and_w_spca_INDPRO_ns <- spca_factors_and_w(x=expl_vars_without_w_INDPRO_ns, w=w_INDPRO_ns)
+factors_and_w_spca_CMRMTSPLx_ns <- spca_factors_and_w(x=expl_vars_without_w_CMRMTSPLx_ns, w=w_CMRMTSPLx_ns)
+factors_and_w_spca_PAYEMS_ns <- spca_factors_and_w(x=expl_vars_without_w_PAYEMS_ns, w=w_PAYEMS_ns)
+factors_and_w_spca_WPSFD49207_ns <- spca_factors_and_w(x=expl_vars_without_w_WPSFD49207_ns, w=w_WPSFD49207_ns)
+factors_and_w_spca_CPIAUCSL_ns <- spca_factors_and_w(x=expl_vars_without_w_CPIAUCSL_ns, w=w_CPIAUCSL_ns)
+factors_and_w_spca_CPIULFSL_ns <- spca_factors_and_w(x=expl_vars_without_w_CPIULFSL_ns, w=w_CPIULFSL_ns)
+factors_and_w_spca_PCEPI_ns <- spca_factors_and_w(x=expl_vars_without_w_PCEPI_ns, w=w_PCEPI_ns)
+
+# get factors out of all explanatory variables
+# factors_spca_RPI <- spca_factors(expl_vars_RPI)
+# factors_spca_INDPRO <- spca_factors(expl_vars_INDPRO)
+# factors_spca_CMRMTSPLx <- spca_factors(expl_vars_CMRMTSPLx)
+# factors_spca_PAYEMS <- spca_factors(expl_vars_PAYEMS)
+# factors_spca_WPSFD49207 <- spca_factors(expl_vars_WPSFD49207)
+# factors_spca_CPIAUCSL <- spca_factors(expl_vars_CPIAUCSL)
+# factors_spca_CPIULFSL <- spca_factors(expl_vars_CPIULFSL)
+# factors_spca_PCEPI <- spca_factors(expl_vars_PCEPI)
+
+##### LA(PC) #####
+
+# get factors out of only x (then factors and w merged)
+factors_and_w_lapc_RPI_ns <- lapc_factors_and_w(x=expl_vars_without_w_RPI_ns,y=dependent_vars_ns$RPI,w=w_RPI_ns)
+factors_and_w_lapc_INDPRO_ns <- lapc_factors_and_w(x=expl_vars_without_w_INDPRO_ns,y=dependent_vars_ns$INDPRO, w=w_INDPRO_ns)
+factors_and_w_lapc_CMRMTSPLx_ns <- lapc_factors_and_w(x=expl_vars_without_w_CMRMTSPLx_ns, y=dependent_vars_ns$CMRMTSPLx, w=w_CMRMTSPLx_ns)
+factors_and_w_lapc_PAYEMS_ns <- lapc_factors_and_w(x=expl_vars_without_w_PAYEMS_ns, y=dependent_vars_ns$PAYEMS, w=w_PAYEMS_ns)
+factors_and_w_lapc_WPSFD49207_ns <- lapc_factors_and_w(x=expl_vars_without_w_WPSFD49207_ns, y=dependent_vars_ns$WPSFD49207, w=w_WPSFD49207_ns)
+factors_and_w_lapc_CPIAUCSL_ns <- lapc_factors_and_w(x=expl_vars_without_w_CPIAUCSL_ns, y=dependent_vars_ns$CPIAUCSL, w=w_CPIAUCSL_ns)
+factors_and_w_lapc_CPIULFSL_ns <- lapc_factors_and_w(x=expl_vars_without_w_CPIULFSL_ns, y=dependent_vars_ns$CPIULFSL, w=w_CPIULFSL_ns)
+factors_and_w_lapc_PCEPI_ns <- lapc_factors_and_w(x=expl_vars_without_w_PCEPI_ns, y=dependent_vars_ns$PCEPI, w=w_PCEPI_ns)
+
+# get factors out of all explanatory variables
+# factors_lapc_RPI <- lapc_factors(x=expl_vars_RPI,y=dependent_vars_data$RPI)
+# factors_lapc_INDPRO <- lapc_factors(x=expl_vars_INDPRO,y=dependent_vars_data$INDPRO)
+# factors_lapc_CMRMTSPLx <- lapc_factors(x=expl_vars_CMRMTSPLx, y=dependent_vars_data$CMRMTSPLx)
+# factors_lapc_PAYEMS <- lapc_factors(x=expl_vars_PAYEMS, y=dependent_vars_data$PAYEMS)
+# factors_lapc_WPSFD49207 <- lapc_factors(x=expl_vars_WPSFD49207, y=dependent_vars_data$WPSFD49207)
+# factors_lapc_CPIAUCSL <- lapc_factors(x=expl_vars_CPIAUCSL, y=dependent_vars_data$CPIAUCSL)
+# factors_lapc_CPIULFSL <- lapc_factors(x=expl_vars_CPIULFSL, y=dependent_vars_data$CPIULFSL)
+# factors_lapc_PCEPI <- lapc_factors(x=expl_vars_PCEPI, y=dependent_vars_data$PCEPI)
+
+
+
+
+############################################################ 
+############### Code used to created outputs ############### 
+############################################################ 
+
+
 source("Dataprocessor.R")
 source("Forecast.R")
 source("Model.R")
@@ -309,13 +556,13 @@ alphaList <- seq(0.1, 0.9, by = 0.1)
 # Tuning
 #lags <- TuningLags(data, dependentVar)
 
-dependent_var = as.data.frame(dependent_var_RPI)
-expl_var = as.data.frame(expl_vars_RPI)
-penalty = penalty_factor_RPI
-factors_PCA = as.data.frame(factors_and_w_RPI)
-factors_SPCA = as.data.frame(factors_and_w_spca_RPI)
-factors_LAPC = as.data.frame(factors_and_w_lapc_RPI)
-lag = best_lag_RPI
+dependent_var = as.data.frame(dependent_var_INDPRO)
+expl_var = as.data.frame(expl_vars_INDPRO)
+penalty = penalty_factor_INDPRO
+factors_PCA = as.data.frame(factors_and_w_INDPRO)
+factors_SPCA = as.data.frame(factors_and_w_spca_INDPRO)
+factors_LAPC = as.data.frame(factors_and_w_lapc_INDPRO)
+lag = best_lag_INDPRO
 
 
 lasso <- "Lasso"
@@ -341,6 +588,26 @@ ar <- "AR"
 error_AR <- RollingWindowNew(dependent_var, expl_var, method=ar, lag=lag)
 
 
+source("Dataprocessor.R")
+source("Forecast.R")
+source("Model.R")
+source("Tuning.R")
+source("ForecastCombinations.R")
+
+error_forecast_combination_Equal <- RollingWindowForecastCombination(dependent_var, expl_var, penalty=penalty, factors_PCA=factors_PCA, 
+                                                               factors_SPCA=factors_SPCA, factors_LAPC=factors_LAPC, lag=lag, method="equal")
+
+error_forecast_combination_OLS <- RollingWindowForecastCombination(dependent_var, expl_var, penalty=penalty, factors_PCA=factors_PCA, 
+                                                               factors_SPCA=factors_SPCA, factors_LAPC=factors_LAPC, lag=lag, method="Ols")
+
+error_forecast_combination_Lasso <- RollingWindowForecastCombination(dependent_var, expl_var, penalty=penalty, factors_PCA=factors_PCA, 
+                                                               factors_SPCA=factors_SPCA, factors_LAPC=factors_LAPC, lag=lag, method="Lasso")
+
+error_forecast_combination_Ridge <- RollingWindowForecastCombination(dependent_var, expl_var, penalty=penalty, factors_PCA=factors_PCA, 
+                                                               factors_SPCA=factors_SPCA, factors_LAPC=factors_LAPC, lag=lag, method="Ridge")
+
+
+
 print(paste("Lasso MSE over rolling window is:", error_Lasso))
 print(paste("Ridge MSE over rolling window is:", error_Ridge))
 print(paste("Elastic Net MSE over rolling window is:", error_ElasticNet))
@@ -349,6 +616,46 @@ print(paste("PCA MSE over rolling window is:", error_PCA))
 print(paste("SPCA MSE over rolling window is:", error_SPCA))
 print(paste("LAPC MSE over rolling window is:", error_LAPC))
 print(paste("AR MSE over rolling window is:", error_AR))
+print(paste("Forecast combination Equal MSE over rolling window is:", error_forecast_combination_Equal))
+print(paste("Forecast combination OLS MSE over rolling window is:", error_forecast_combination_OLS))
+print(paste("Forecast combination Lasso MSE over rolling window is:", error_forecast_combination_Lasso))
+print(paste("Forecast combination Ridge MSE over rolling window is:", error_forecast_combination_Ridge))
+
+
+
+
+
+########################################################### 
+############### Code used to create outputs ############### 
+###########################################################
+
+
+source("Dataprocessor.R")
+source("Forecast.R")
+source("Model.R")
+source("Tuning.R")
+
+dependent_var = as.data.frame(dependent_var_INDPRO_ns)
+expl_var = as.data.frame(expl_vars_INDPRO_ns)
+penalty = penalty_factor_INDPRO_ns
+factors_PCA = as.data.frame(factors_and_w_INDPRO_ns)
+factors_SPCA = as.data.frame(factors_and_w_spca_INDPRO_ns)
+factors_LAPC = as.data.frame(factors_and_w_lapc_INDPRO_ns)
+lag = best_lag_INDPRO
+
+
+error_Lasso <- RollingWindowNew(dependent_var, expl_var, method=lasso, penalty=penalty)
+error_Ridge <- RollingWindowNew(dependent_var, expl_var, method=ridge, penalty=penalty)
+error_ElasticNet <- RollingWindowNew(dependent_var, expl_var, method=elasticNet, alpha=0.01, penalty=penalty)
+error_AdaptiveLasso <- RollingWindowNew(dependent_var, expl_var, method=adaptiveLasso, penalty=penalty)
+
+
+error_PCA <- RollingWindowNew(dependent_var, factors_PCA, method=pca)
+error_SPCA <- RollingWindowNew(dependent_var, factors_SPCA, method=spca)
+error_LAPC <- RollingWindowNew(dependent_var, factors_LAPC, method=lapc)
+
+error_AR <- RollingWindowNew(dependent_var, expl_var, method=ar, lag=lag)
+
 
 source("Dataprocessor.R")
 source("Forecast.R")
@@ -357,20 +664,75 @@ source("Tuning.R")
 source("ForecastCombinations.R")
 
 error_forecast_combination_Equal <- RollingWindowForecastCombination(dependent_var, expl_var, penalty=penalty, factors_PCA=factors_PCA, 
-                                                               factors_SPCA=factors_SPCA, factors_LAPC=factors_LAPC, lag=best_lag_RPI, method="equal")
+                                                                     factors_SPCA=factors_SPCA, factors_LAPC=factors_LAPC, lag=lag, method="equal")
 
 error_forecast_combination_OLS <- RollingWindowForecastCombination(dependent_var, expl_var, penalty=penalty, factors_PCA=factors_PCA, 
-                                                               factors_SPCA=factors_SPCA, factors_LAPC=factors_LAPC, lag=best_lag_RPI, method="Ols")
+                                                                   factors_SPCA=factors_SPCA, factors_LAPC=factors_LAPC, lag=lag, method="Ols")
 
 error_forecast_combination_Lasso <- RollingWindowForecastCombination(dependent_var, expl_var, penalty=penalty, factors_PCA=factors_PCA, 
-                                                               factors_SPCA=factors_SPCA, factors_LAPC=factors_LAPC, lag=best_lag_RPI, method="Lasso")
+                                                                     factors_SPCA=factors_SPCA, factors_LAPC=factors_LAPC, lag=lag, method="Lasso")
 
 error_forecast_combination_Ridge <- RollingWindowForecastCombination(dependent_var, expl_var, penalty=penalty, factors_PCA=factors_PCA, 
-                                                               factors_SPCA=factors_SPCA, factors_LAPC=factors_LAPC, lag=best_lag_RPI, method="Ridge")
+                                                                     factors_SPCA=factors_SPCA, factors_LAPC=factors_LAPC, lag=lag, method="Ridge")
 
+
+
+print(paste("Lasso MSE over rolling window is:", error_Lasso))
+print(paste("Ridge MSE over rolling window is:", error_Ridge))
+print(paste("Elastic Net MSE over rolling window is:", error_ElasticNet))
+print(paste("Adaptive Lasso MSE over rolling window is:", error_AdaptiveLasso))
+print(paste("PCA MSE over rolling window is:", error_PCA))
+print(paste("SPCA MSE over rolling window is:", error_SPCA))
+
+print(paste("LAPC MSE over rolling window is:", error_LAPC))
+print(paste("AR MSE over rolling window is:", error_AR))
 print(paste("Forecast combination Equal MSE over rolling window is:", error_forecast_combination_Equal))
 print(paste("Forecast combination OLS MSE over rolling window is:", error_forecast_combination_OLS))
 print(paste("Forecast combination Lasso MSE over rolling window is:", error_forecast_combination_Lasso))
 print(paste("Forecast combination Ridge MSE over rolling window is:", error_forecast_combination_Ridge))
 
 
+
+#######################################################################  
+############### Code used to create break-point outputs ############### 
+####################################################################### 
+
+source("Dataprocessor.R")
+source("Forecast.R")
+source("Model.R")
+source("Tuning.R")
+
+dependent_var = as.data.frame(dependent_var_INDPRO_ns)
+expl_var = as.data.frame(expl_vars_INDPRO_ns)
+penalty = penalty_factor_INDPRO_ns
+factors_PCA = as.data.frame(factors_and_w_INDPRO_ns)
+factors_SPCA = as.data.frame(factors_and_w_spca_INDPRO_ns)
+factors_LAPC = as.data.frame(factors_and_w_lapc_INDPRO_ns)
+lag = best_lag_INDPRO
+breakpoints <- bp_INDPRO
+
+
+error_Lasso <- RollingWindowBreakPoints(dependent_var, expl_var, method=lasso, penalty=penalty, breakpoints=breakpoints)
+error_Ridge <- RollingWindowBreakPoints(dependent_var, expl_var, method=ridge, penalty=penalty, breakpoints=breakpoints)
+error_ElasticNet <- RollingWindowBreakPoints(dependent_var, expl_var, method=elasticNet, alpha=0.01, penalty=penalty, breakpoints=breakpoints)
+error_AdaptiveLasso <- RollingWindowBreakPoints(dependent_var, expl_var, method=adaptiveLasso, penalty=penalty, breakpoints=breakpoints)
+
+
+error_PCA <- RollingWindowBreakPoints(dependent_var, factors_PCA, method=pca, breakpoints=breakpoints)
+error_SPCA <- RollingWindowBreakPoints(dependent_var, factors_SPCA, method=spca, breakpoints=breakpoints)
+error_LAPC <- RollingWindowBreakPoints(dependent_var, factors_LAPC, method=lapc, breakpoints=breakpoints)
+
+error_AR <- RollingWindowBreakPoints(dependent_var, expl_var, method=ar, lag=lag, breakpoints=breakpoints)
+
+print(paste("Lasso MSE over rolling window is:", error_Lasso))
+print(paste("Ridge MSE over rolling window is:", error_Ridge))
+print(paste("Elastic Net MSE over rolling window is:", error_ElasticNet))
+print(paste("Adaptive Lasso MSE over rolling window is:", error_AdaptiveLasso))
+print(paste("PCA MSE over rolling window is:", error_PCA))
+print(paste("SPCA MSE over rolling window is:", error_SPCA))
+print(paste("LAPC MSE over rolling window is:", error_LAPC))
+print(paste("AR MSE over rolling window is:", error_AR))
+print(paste("Forecast combination Equal MSE over rolling window is:", error_forecast_combination_Equal))
+print(paste("Forecast combination OLS MSE over rolling window is:", error_forecast_combination_OLS))
+print(paste("Forecast combination Lasso MSE over rolling window is:", error_forecast_combination_Lasso))
+print(paste("Forecast combination Ridge MSE over rolling window is:", error_forecast_combination_Ridge))
