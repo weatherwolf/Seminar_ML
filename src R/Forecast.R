@@ -110,7 +110,7 @@ RollingWindowNew = function(dependent_var, explanatory_vars_data, method, lambda
     endTime <- endTime + 1
   }
   
-  print(totalError)
+  print(sqrt(totalError/numberOfWindows))
 }
 
 
@@ -231,7 +231,7 @@ RollingWindowBreakPoints = function(dependent_var, explanatory_vars_data, method
     
   }
   
-  print(totalError)
+  print(sqrt(totalError/numberOfWindows))
 }
 
 
@@ -287,7 +287,6 @@ RollingWindowForecastCombination = function(dependent_var, explanatory_vars_data
     
     betasAdaptiveLasso <- coef(model1)  # Extract coefficients from Lasso model
     weightsAdaptiveLasso <- 1 / (abs(betasAdaptiveLasso))  # Calculate weights (add a small value to avoid division by zero)
-    weights <- 1 / (abs(betas))  # Calculate weights (add a small value to avoid division by zero)
     for (i in seq_along(weightsAdaptiveLasso)) {
       if (is.na(weightsAdaptiveLasso[i])) {
         weightsAdaptiveLasso[i] <- 0
@@ -393,8 +392,7 @@ RollingWindowForecastCombination = function(dependent_var, explanatory_vars_data
     totalErrorLasso <- totalErrorLasso + (y_test-y_barLasso)*(y_test-y_barLasso)
     
   }
-  print(totalErrorLasso)
-  print(totalError)
+  print(sqrt(totalError/numberOfWindows))
 }
 
 

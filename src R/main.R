@@ -608,18 +608,18 @@ error_forecast_combination_Ridge <- RollingWindowForecastCombination(dependent_v
 
 
 
-print(paste("Lasso MSE over rolling window is:", error_Lasso))
-print(paste("Ridge MSE over rolling window is:", error_Ridge))
-print(paste("Elastic Net MSE over rolling window is:", error_ElasticNet))
-print(paste("Adaptive Lasso MSE over rolling window is:", error_AdaptiveLasso))
-print(paste("PCA MSE over rolling window is:", error_PCA))
-print(paste("SPCA MSE over rolling window is:", error_SPCA))
-print(paste("LAPC MSE over rolling window is:", error_LAPC))
-print(paste("AR MSE over rolling window is:", error_AR))
-print(paste("Forecast combination Equal MSE over rolling window is:", error_forecast_combination_Equal))
-print(paste("Forecast combination OLS MSE over rolling window is:", error_forecast_combination_OLS))
-print(paste("Forecast combination Lasso MSE over rolling window is:", error_forecast_combination_Lasso))
-print(paste("Forecast combination Ridge MSE over rolling window is:", error_forecast_combination_Ridge))
+print(paste("Lasso RMSE over rolling window is:", error_Lasso))
+print(paste("Ridge RMSE over rolling window is:", error_Ridge))
+print(paste("Elastic Net RMSE over rolling window is:", error_ElasticNet))
+print(paste("Adaptive Lasso RMSE over rolling window is:", error_AdaptiveLasso))
+print(paste("PCA RMSE over rolling window is:", error_PCA))
+print(paste("SPCA RMSE over rolling window is:", error_SPCA))
+print(paste("LAPC RMSE over rolling window is:", error_LAPC))
+print(paste("AR RMSE over rolling window is:", error_AR))
+print(paste("Forecast combination Equal RMSE over rolling window is:", error_forecast_combination_Equal))
+print(paste("Forecast combination OLS RMSE over rolling window is:", error_forecast_combination_OLS))
+print(paste("Forecast combination Lasso RMSE over rolling window is:", error_forecast_combination_Lasso))
+print(paste("Forecast combination Ridge RMSE over rolling window is:", error_forecast_combination_Ridge))
 
 
 
@@ -641,7 +641,6 @@ penalty = penalty_factor_INDPRO_ns
 factors_PCA = as.data.frame(factors_and_w_INDPRO_ns)
 factors_SPCA = as.data.frame(factors_and_w_spca_INDPRO_ns)
 factors_LAPC = as.data.frame(factors_and_w_lapc_INDPRO_ns)
-lag = best_lag_INDPRO
 
 
 error_Lasso <- RollingWindowNew(dependent_var, expl_var, method=lasso, penalty=penalty)
@@ -654,43 +653,15 @@ error_PCA <- RollingWindowNew(dependent_var, factors_PCA, method=pca)
 error_SPCA <- RollingWindowNew(dependent_var, factors_SPCA, method=spca)
 error_LAPC <- RollingWindowNew(dependent_var, factors_LAPC, method=lapc)
 
-error_AR <- RollingWindowNew(dependent_var, expl_var, method=ar, lag=lag)
 
 
-source("Dataprocessor.R")
-source("Forecast.R")
-source("Model.R")
-source("Tuning.R")
-source("ForecastCombinations.R")
-
-error_forecast_combination_Equal <- RollingWindowForecastCombination(dependent_var, expl_var, penalty=penalty, factors_PCA=factors_PCA, 
-                                                                     factors_SPCA=factors_SPCA, factors_LAPC=factors_LAPC, lag=lag, method="equal")
-
-error_forecast_combination_OLS <- RollingWindowForecastCombination(dependent_var, expl_var, penalty=penalty, factors_PCA=factors_PCA, 
-                                                                   factors_SPCA=factors_SPCA, factors_LAPC=factors_LAPC, lag=lag, method="Ols")
-
-error_forecast_combination_Lasso <- RollingWindowForecastCombination(dependent_var, expl_var, penalty=penalty, factors_PCA=factors_PCA, 
-                                                                     factors_SPCA=factors_SPCA, factors_LAPC=factors_LAPC, lag=lag, method="Lasso")
-
-error_forecast_combination_Ridge <- RollingWindowForecastCombination(dependent_var, expl_var, penalty=penalty, factors_PCA=factors_PCA, 
-                                                                     factors_SPCA=factors_SPCA, factors_LAPC=factors_LAPC, lag=lag, method="Ridge")
-
-
-
-print(paste("Lasso MSE over rolling window is:", error_Lasso))
-print(paste("Ridge MSE over rolling window is:", error_Ridge))
-print(paste("Elastic Net MSE over rolling window is:", error_ElasticNet))
-print(paste("Adaptive Lasso MSE over rolling window is:", error_AdaptiveLasso))
-print(paste("PCA MSE over rolling window is:", error_PCA))
-print(paste("SPCA MSE over rolling window is:", error_SPCA))
-
-print(paste("LAPC MSE over rolling window is:", error_LAPC))
-print(paste("AR MSE over rolling window is:", error_AR))
-print(paste("Forecast combination Equal MSE over rolling window is:", error_forecast_combination_Equal))
-print(paste("Forecast combination OLS MSE over rolling window is:", error_forecast_combination_OLS))
-print(paste("Forecast combination Lasso MSE over rolling window is:", error_forecast_combination_Lasso))
-print(paste("Forecast combination Ridge MSE over rolling window is:", error_forecast_combination_Ridge))
-
+print(paste("Lasso RMSE over rolling window in non_stat is:", error_Lasso))
+print(paste("Ridge RMSE over rolling window in non_stat is:", error_Ridge))
+print(paste("Elastic Net RMSE over rolling window in non_stat is:", error_ElasticNet))
+print(paste("Adaptive Lasso RMSE over rolling window in non_stat is:", error_AdaptiveLasso))
+print(paste("PCA RMSE over rolling window in non_stat is:", error_PCA))
+print(paste("SPCA RMSE over rolling window in non_stat is:", error_SPCA))
+print(paste("LAPC RMSE over rolling window in non_stat is:", error_LAPC))
 
 
 #######################################################################  
@@ -708,7 +679,6 @@ penalty = penalty_factor_INDPRO_ns
 factors_PCA = as.data.frame(factors_and_w_INDPRO_ns)
 factors_SPCA = as.data.frame(factors_and_w_spca_INDPRO_ns)
 factors_LAPC = as.data.frame(factors_and_w_lapc_INDPRO_ns)
-lag = best_lag_INDPRO
 breakpoints <- bp_INDPRO
 
 
@@ -717,22 +687,14 @@ error_Ridge <- RollingWindowBreakPoints(dependent_var, expl_var, method=ridge, p
 error_ElasticNet <- RollingWindowBreakPoints(dependent_var, expl_var, method=elasticNet, alpha=0.01, penalty=penalty, breakpoints=breakpoints)
 error_AdaptiveLasso <- RollingWindowBreakPoints(dependent_var, expl_var, method=adaptiveLasso, penalty=penalty, breakpoints=breakpoints)
 
-
 error_PCA <- RollingWindowBreakPoints(dependent_var, factors_PCA, method=pca, breakpoints=breakpoints)
 error_SPCA <- RollingWindowBreakPoints(dependent_var, factors_SPCA, method=spca, breakpoints=breakpoints)
 error_LAPC <- RollingWindowBreakPoints(dependent_var, factors_LAPC, method=lapc, breakpoints=breakpoints)
 
-error_AR <- RollingWindowBreakPoints(dependent_var, expl_var, method=ar, lag=lag, breakpoints=breakpoints)
-
-print(paste("Lasso MSE over rolling window is:", error_Lasso))
-print(paste("Ridge MSE over rolling window is:", error_Ridge))
-print(paste("Elastic Net MSE over rolling window is:", error_ElasticNet))
-print(paste("Adaptive Lasso MSE over rolling window is:", error_AdaptiveLasso))
-print(paste("PCA MSE over rolling window is:", error_PCA))
-print(paste("SPCA MSE over rolling window is:", error_SPCA))
-print(paste("LAPC MSE over rolling window is:", error_LAPC))
-print(paste("AR MSE over rolling window is:", error_AR))
-print(paste("Forecast combination Equal MSE over rolling window is:", error_forecast_combination_Equal))
-print(paste("Forecast combination OLS MSE over rolling window is:", error_forecast_combination_OLS))
-print(paste("Forecast combination Lasso MSE over rolling window is:", error_forecast_combination_Lasso))
-print(paste("Forecast combination Ridge MSE over rolling window is:", error_forecast_combination_Ridge))
+print(paste("Lasso RMSE over break point rolling window in non_stat is:", error_Lasso))
+print(paste("Ridge RMSE over break point window is:", error_Ridge))
+print(paste("Elastic Net RMSE over break pointrolling window in non_stat is:", error_ElasticNet))
+print(paste("Adaptive Lasso RMSE over break point rolling window in non_stat is:", error_AdaptiveLasso))
+print(paste("PCA RMSE over break point rolling window in non_stat is:", error_PCA))
+print(paste("SPCA RMSE over break point rolling window in non_stat is:", error_SPCA))
+print(paste("LAPC RMSE over break point rolling window in non_stat is:", error_LAPC))
