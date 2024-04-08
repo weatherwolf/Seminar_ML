@@ -9,8 +9,14 @@ yBar = function(x, coef, intercept) {
   y_bar <- intercept
   y_bar <- y_bar + sum(x * coef)
   
+  # Check if y_bar is Na
+  if (is.na(y_bar)) {
+    y_bar <- intercept + sum(x[-1] * coef[-1])
+  }
+  
   return(y_bar)
 }
+
 
 
 RollingWindowNew = function(dependent_var, explanatory_vars_data, method, lambda= 1, alpha = 0.5, penalty=NULL, lag=1) {
@@ -56,8 +62,13 @@ RollingWindowNew = function(dependent_var, explanatory_vars_data, method, lambda
       model <- NULL
     } else if (method == "AdaptiveLasso") {
       model1 <- stats::lm(y_train ~ x_train-1)
-      betas <- coef(model1)  # Extract coefficients from Lasso model
+      betas <- coef(model1)  # Extract coefficients from OLS
       weights <- 1 / (abs(betas))  # Calculate weights (add a small value to avoid division by zero)
+      for (i in seq_along(weights)) {
+        if (is.na(weights[i])) {
+          weights[i] <- 0
+        }
+      }
       penalty <- weights * penalty
       
       # Fit Adaptive Lasso model with calculated penalty factors
@@ -193,8 +204,7 @@ RollingWindowBreakPoints = function(dependent_var, explanatory_vars_data, method
       y_bar <- yBar(x_test, coef, intercept)
       
       totalError <- totalError + (y_test-y_bar)*(y_test-y_bar)
-      print(totalError)
-      
+
     } else if (method %in% c("PCA", "SPCA", "LAPC")){
       
       model <- stats::lm(y_train ~ x_train-1)
