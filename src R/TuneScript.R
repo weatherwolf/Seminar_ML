@@ -549,19 +549,18 @@ source("Forecast.R")
 source("Model.R")
 source("Tuning.R")
 
-lambdaList <- 10^(-10:4)
-alphaList <- seq(0.1, 0.9, by = 0.1)
+
 
 # Tuning
 #lags <- TuningLags(data, dependentVar)
 
-dependent_var = as.data.frame(dependent_var_RPI)
-expl_var = as.data.frame(expl_vars_RPI)
-penalty = penalty_factor_RPI
-factors_PCA = as.data.frame(factors_and_w_RPI)
-factors_SPCA = as.data.frame(factors_and_w_spca_RPI)
-factors_LAPC = as.data.frame(factors_and_w_lapc_RPI)
-lag = best_lag_RPI
+dependent_var = as.data.frame(dependent_var_PCEPI)
+expl_var = as.data.frame(expl_vars_PCEPI)
+penalty = penalty_factor_PCEPI
+factors_PCA = as.data.frame(factors_and_w_PCEPI)
+factors_SPCA = as.data.frame(factors_and_w_spca_PCEPI)
+factors_LAPC = as.data.frame(factors_and_w_lapc_PCEPI)
+lag = best_lag_PCEPI
 
 
 lasso <- "Lasso"
@@ -593,18 +592,18 @@ source("Model.R")
 source("Tuning.R")
 source("ForecastCombinations.R")
 
-
 error_forecast_combination_Equal_nonstat <- RollingWindowForecastCombination(dependent_var, expl_var, penalty=penalty, factors_PCA=factors_PCA, 
-                                                               factors_SPCA=factors_SPCA, factors_LAPC=factors_LAPC, lag=lag, method="equal")
+                                                                             factors_SPCA=factors_SPCA, factors_LAPC=factors_LAPC, lag=lag, method="equal")
 
 error_forecast_combination_OLS_nonstat <- RollingWindowForecastCombination(dependent_var, expl_var, penalty=penalty, factors_PCA=factors_PCA, 
-                                                               factors_SPCA=factors_SPCA, factors_LAPC=factors_LAPC, lag=lag, method="Ols")
+                                                                           factors_SPCA=factors_SPCA, factors_LAPC=factors_LAPC, lag=lag, method="Ols")
 
 error_forecast_combination_Lasso_nonstat <- RollingWindowForecastCombination(dependent_var, expl_var, penalty=penalty, factors_PCA=factors_PCA, 
-                                                               factors_SPCA=factors_SPCA, factors_LAPC=factors_LAPC, lag=lag, method="Lasso")
+                                                                             factors_SPCA=factors_SPCA, factors_LAPC=factors_LAPC, lag=lag, method="Lasso")
 
 error_forecast_combination_Ridge_nonstat <- RollingWindowForecastCombination(dependent_var, expl_var, penalty=penalty, factors_PCA=factors_PCA, 
-                                                               factors_SPCA=factors_SPCA, factors_LAPC=factors_LAPC, lag=lag, method="Ridge")
+                                                                             factors_SPCA=factors_SPCA, factors_LAPC=factors_LAPC, lag=lag, method="Ridge")
+
 
 
 print(paste("Lasso RMSE over rolling window is:", error_Lasso/error_AR))
@@ -636,12 +635,12 @@ source("Forecast.R")
 source("Model.R")
 source("Tuning.R")
 
-dependent_var = as.data.frame(dependent_var_RPI_ns)
-expl_var = as.data.frame(expl_vars_RPI_ns)
-penalty = penalty_factor_RPI_ns
-factors_PCA = as.data.frame(factors_and_w_RPI_ns)
-factors_SPCA = as.data.frame(factors_and_w_spca_RPI_ns)
-factors_LAPC = as.data.frame(factors_and_w_lapc_RPI_ns)
+dependent_var = as.data.frame(dependent_var_PCEPI_ns)
+expl_var = as.data.frame(expl_vars_PCEPI_ns)
+penalty = penalty_factor_PCEPI_ns
+factors_PCA = as.data.frame(factors_and_w_PCEPI_ns)
+factors_SPCA = as.data.frame(factors_and_w_spca_PCEPI_ns)
+factors_LAPC = as.data.frame(factors_and_w_lapc_PCEPI_ns)
 
 
 error_Lasso_stat <- RollingWindowNew(dependent_var, expl_var, method=lasso, penalty=penalty)
@@ -715,4 +714,27 @@ error_LAPC_breakpoint <- RollingWindowBreakPoints(dependent_var, factors_LAPC, m
 # print(paste(error_AR_nonstat,",",error_Lasso_nonstat,",", error_Ridge_nonstat,"," ,error_ElasticNet_nonstat, ",",error_AdaptiveLasso_nonstat,",", error_PCA_nonstat, ",",error_SPCA_nonstat,"," ,error_LAPC_nonstat, ",",error_forecast_combination_Equal_nonstat, ",",error_forecast_combination_OLS_nonstat,",", error_forecast_combination_Lasso_nonstat,",", error_forecast_combination_Ridge_nonstat))
 # print(paste(error_Lasso_stat,",", error_Ridge_stat,"," ,error_ElasticNet_stat, ",",error_AdaptiveLasso_stat,",", error_PCA_stat, ",",error_SPCA_stat,"," ,error_LAPC_stat))
 print(paste(error_Lasso_breakpoint,",", error_Ridge_breakpoint,"," ,error_ElasticNet_breakpoint, ",",error_AdaptiveLasso_breakpoint,",", error_PCA_breakpoint, ",",error_SPCA_breakpoint,"," ,error_LAPC_breakpoint))
+
+
+source("Tuning.R")
+
+lambdaList <- 10^(-10:4)
+alphaList <- seq(0.1, 0.9, by = 0.1)
+
+dependent_var = as.data.frame(dependent_var_RPI)
+expl_var = as.data.frame(expl_vars_RPI)
+penalty = penalty_factor_RPI
+factors_PCA = as.data.frame(factors_and_w_RPI)
+factors_SPCA = as.data.frame(factors_and_w_spca_RPI)
+factors_LAPC = as.data.frame(factors_and_w_lapc_RPI)
+
+test <- RollingWindowNew(dependent_var, expl_var, method=lasso, penalty=penalty)
+outputLasso <- TuningForecast(dependent_var, expl_var, method=lasso, lambdaList=lambdaList, alphaList=1, penalty=penalty)
+outputRidge <- TuningForecast(dependent_var, expl_var, method=ridge, lambdaList=lambdaList, alphaList=1, penalty=penalty)
+outputElasticNet <- TuningForecast(dependent_var, expl_var, method=elasticNet, lambdaList=lambdaList, alphaList=alphaList, penalty=penalty)
+outputAdaptiveLasso <- TuningForecast(dependent_var, expl_var, method=adaptiveLasso, lambdaList=lambdaList, alphaList=1, penalty=penalty)
+
+outputLasso <- RollingWindowTuningPenalized(dependent_var, expl_var, method=lasso, lambdaList=lambdaList, alphaList=1, penalty=penalty)
+
+
 

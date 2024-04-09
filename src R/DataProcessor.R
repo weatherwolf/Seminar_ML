@@ -49,31 +49,6 @@ TransformData = function(data, transform) {
   self$data_stat <- data[-c(1, 2), ]
 }
 
-CreateDataSet <- function(data, dependentVariable, beginTime=NULL, endTime=NULL, toInclude=NULL, cleaned=FALSE) {
-  
-  # beginTime <- ifelse(!is.null(beginTime), beginTime, 1)
-  # endTime <- ifelse(!is.null(endTime), endTime, 10)
-  
-  if (!is.null(toInclude)) {
-    columns_to_keep <- toInclude[toInclude %in% colnames(data)]
-    columns_to_keep <- c(columns_to_keep, 'sasdate', dependentVariable)
-    data <- data[, c(columns_to_keep)]
-  }
-  
-  data_cleaned_train <- data[beginTime:endTime,]
-  
-  x_train <- subset(data_cleaned_train, select = -(RPI))
-  y_train <- subset(data_cleaned_train, select = dependentVariable)
-  
-  data_cleaned_test <- data[endTime+1,]
-  
-  x_test <- subset(data_cleaned_test, select = -(RPI))
-  y_test <- subset(data_cleaned_test, select = dependentVariable)
-
-  return(list(x_train, y_train, x_test, y_test))
-}
-
-
 CreateDataSetNew <- function(dependent_var, explanatory_vars_data, beginTime=NULL, endTime=NULL, toInclude=NULL) {
   
   # beginTime <- ifelse(!is.null(beginTime), beginTime, 1)
@@ -89,7 +64,7 @@ CreateDataSetNew <- function(dependent_var, explanatory_vars_data, beginTime=NUL
   x_train <- explanatory_vars_data[beginTime:endTime,]
   y_train <- dependent_var[beginTime:endTime,]
   
-  x_test <- explanatory_vars_data[endTime+1,]
+  x_test <- explanatory_vars_data[endTime,]
   y_test <- dependent_var[endTime+1,]
   
   y_train <- as.data.frame(y_train)
