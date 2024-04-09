@@ -49,24 +49,28 @@ TransformData = function(data, transform) {
   self$data_stat <- data[-c(1, 2), ]
 }
 
-CreateDataSetNew <- function(dependent_var, explanatory_vars_data, beginTime=NULL, endTime=NULL, toInclude=NULL) {
+CreateDataSetNew <- function(dependent_var, explanatory_vars, beginTime, endTime, numlags=1) {
+
+  x_train <- explanatory_vars[(beginTime+6):endTime, ]
   
-  # beginTime <- ifelse(!is.null(beginTime), beginTime, 1)
-  # endTime <- ifelse(!is.null(endTime), endTime, 10)
-  
-  if (!is.null(toInclude)) {
-    columns_to_keep <- toInclude[toInclude %in% colnames(data)]
-    columns_to_keep <- c(columns_to_keep)
-    
-    explanatory_vars_data <- explanatory_vars_data[, c(columns_to_keep)]
+  for (i in 1:numlags) {
+    lagged_var <- dependent_var[(beginTime+6-i):(endTime-i), ]
+    x_train <- cbind(x_train, lagged_var)
   }
   
-  x_train <- explanatory_vars_data[beginTime:endTime,]
-  y_train <- dependent_var[beginTime:endTime,]
+  y_train <- dependent_var[(beginTime+6):endTime,]
   
-  x_test <- explanatory_vars_data[endTime,]
-  y_test <- dependent_var[endTime+1,]
+  x_test <- explanatory_vars[endTime,]
   
+  for (i in 1:numlags) {
+    lagged_var <- dependent_var[(endTime-i), ]
+    x_test <- cbind(x_test, lagged_var)
+  }
+  
+  y_test <- dependent_var[(endTime+1),]
+  
+  x_train <- as.data.frame(x_train)
+  x_test <- as.data.frame(x_test)
   y_train <- as.data.frame(y_train)
   y_test <- as.data.frame(y_test)
   

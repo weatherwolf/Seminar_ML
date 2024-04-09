@@ -19,22 +19,20 @@ yBar = function(x, coef, intercept) {
 
 
 
-RollingWindowNew = function(dependent_var, explanatory_vars_data, method, lambda= 1, alpha = 0.5, penalty=NULL, lag=1) {
+RollingWindowNew = function(dependent_var, explanatory_vars, method, lambda= 1, alpha = 0.5, lag=1) {
   totalError <- 0
   numberOfWindows <- 0
   
   beginTime <- 1
   endTime <- 120
+
   
-  if (is.null(penalty)) {
-    penalty <- rep(1,ncol(explanatory_vars_data))
-  }
-  
-  
-  while (endTime + 1 <= nrow(explanatory_vars_data)) {
+  while (endTime + 1 <= nrow(explanatory_vars)) {
     numberOfWindows <- numberOfWindows + 1
     
-    totalStats <- CreateDataSetNew(dependent_var, explanatory_vars_data, beginTime = beginTime, endTime = endTime)
+    dataLag <- TuneNumberOfLags(method=method, dependent_var, explanatory_vars, beginTime=beginTime, endTime=endTime, lambda=lambda, alpha=alpha, lagAR=lag)
+
+    totalStats <- CreateDataSetNew(dependent_var, explanatory_vars, beginTime = beginTime, endTime = endTime, numlags = dataLag)
     
     x_train <- as.matrix(totalStats[[1]])
     y_train <- as.matrix(totalStats[[2]])
@@ -47,11 +45,11 @@ RollingWindowNew = function(dependent_var, explanatory_vars_data, method, lambda
     }
     
     if (method == "Lasso") {
-      model <- glmnet(x_train, y_train, alpha = 1, lambda = lambda, penalty.factor = penalty)
+      model <- glmnet(x_train, y_train, alpha = 1, lambda = lambda)
     } else if (method == "Ridge") {
-      model <- glmnet(x_train, y_train, alpha = 0, lambda = lambda, penalty.factor = penalty)
+      model <- glmnet(x_train, y_train, alpha = 0, lambda = lambda)
     } else if (method == "ElasticNet") {
-      model <- glmnet(x_train, y_train, alpha = alpha, lambda = lambda, penalty.factor = penalty)
+      model <- glmnet(x_train, y_train, alpha = alpha, lambda = lambda)
     } else if (method == "PCA") {
       model <- NULL
     } else if (method == "SPCA") {
@@ -69,10 +67,9 @@ RollingWindowNew = function(dependent_var, explanatory_vars_data, method, lambda
           weights[i] <- 0
         }
       }
-      penalty <- weights * penalty
-      
+
       # Fit Adaptive Lasso model with calculated penalty factors
-      model <- glmnet(x_train, y_train, alpha = 1, lambda = 1000, penalty.factor = penalty)
+      model <- glmnet(x_train, y_train, alpha = 1, lambda = 1000)
     } else {
       stop("Invalid model name provided. Try Lasso, Ridge, ElasticNet, PCA, SPCA, AR, or AdaptiveLasso")
     }
@@ -111,10 +108,11 @@ RollingWindowNew = function(dependent_var, explanatory_vars_data, method, lambda
       y_bar <- yBar(y_train[(nrow - lag):nrow, ], coef, intercept)
       
       totalError <- totalError + (y_test-y_bar)*(y_test-y_bar)
-      
-    } else {
-      
     }
+    
+    
+    
+
 
     # Update beginTime and endTime for the next window
     beginTime <- beginTime + 1
@@ -125,19 +123,15 @@ RollingWindowNew = function(dependent_var, explanatory_vars_data, method, lambda
 }
 
 
-RollingWindowBreakPoints = function(dependent_var, explanatory_vars_data, method, breakpoints, lambda= 1, alpha = 0.5, penalty=NULL, lag=1) {
+RollingWindowBreakPoints = function(dependent_var, explanatory_vars, method, breakpoints, lambda= 1, alpha = 0.5, lag=1) {
   totalError <- 0
   numberOfWindows <- 0
   
   beginTime <- 1
   endTime <- 120
   
-  if (is.null(penalty)) {
-    penalty <- rep(1,ncol(explanatory_vars_data))
-  }
   
-  
-  while (endTime + 1 <= nrow(explanatory_vars_data)) {
+  while (endTime + 1 <= nrow(explanatory_vars)) {
     
     beginTimeTemp <- beginTime
     
@@ -149,7 +143,7 @@ RollingWindowBreakPoints = function(dependent_var, explanatory_vars_data, method
     
     numberOfWindows <- numberOfWindows + 1
     
-    totalStats <- CreateDataSetNew(dependent_var, explanatory_vars_data, beginTime = beginTime, endTime = endTime)
+    totalStats <- CreateDataSetNew(dependent_var, explanatory_vars, beginTime = beginTime, endTime = endTime)
     
     x_train <- as.matrix(totalStats[[1]])
     y_train <- as.matrix(totalStats[[2]])
@@ -162,11 +156,11 @@ RollingWindowBreakPoints = function(dependent_var, explanatory_vars_data, method
     }
     
     if (method == "Lasso") {
-      model <- glmnet(x_train, y_train, alpha = 1, lambda = lambda, penalty.factor = penalty)
+      model <- glmnet(x_train, y_train, alpha = 1, lambda = lambda)
     } else if (method == "Ridge") {
-      model <- glmnet(x_train, y_train, alpha = 0, lambda = lambda, penalty.factor = penalty)
+      model <- glmnet(x_train, y_train, alpha = 0, lambda = lambda)
     } else if (method == "ElasticNet") {
-      model <- glmnet(x_train, y_train, alpha = alpha, lambda = lambda, penalty.factor = penalty)
+      model <- glmnet(x_train, y_train, alpha = alpha, lambda = lambda)
     } else if (method == "PCA") {
       model <- NULL
     } else if (method == "SPCA") {
@@ -185,10 +179,9 @@ RollingWindowBreakPoints = function(dependent_var, explanatory_vars_data, method
           weights[i] <- 0
         }
       }
-      penalty <- weights * penalty
 
       # Fit Adaptive Lasso model with calculated penalty factors
-      model <- glmnet(x_train, y_train, alpha = 1, lambda = 1000, penalty.factor = penalty)
+      model <- glmnet(x_train, y_train, alpha = 1, lambda = 1000)
     } else {
       stop("Invalid model name provided. Try Lasso, Ridge, ElasticNet, PCA, SPCA, AR, or AdaptiveLasso")
     }
@@ -253,7 +246,7 @@ RollingWindowBreakPoints = function(dependent_var, explanatory_vars_data, method
 source("ForecastCombinations.R")
 
 
-RollingWindowForecastCombination = function(dependent_var, explanatory_vars_data, penalty, 
+RollingWindowForecastCombination = function(dependent_var, explanatory_vars, 
                                             factors_PCA, factors_SPCA, factors_LAPC, lag, method="equal", alpha=0.5, lambda=1) {
   totalError <- 0
   totalErrorLasso <- 0
@@ -262,15 +255,11 @@ RollingWindowForecastCombination = function(dependent_var, explanatory_vars_data
   beginTime <- 1
   endTime <- 120
   
-  if (is.null(penalty)) {
-    penalty <- rep(1,ncol(explanatory_vars_data))
-  }
   
-  
-  while (endTime + 1 <= nrow(explanatory_vars_data)) {
+  while (endTime + 1 <= nrow(explanatory_vars)) {
     numberOfWindows <- numberOfWindows + 1
     
-    totalStatsStandard <- CreateDataSetNew(dependent_var, explanatory_vars_data, beginTime = beginTime, endTime = endTime)
+    totalStatsStandard <- CreateDataSetNew(dependent_var, explanatory_vars, beginTime = beginTime, endTime = endTime)
     
     x_train <- as.matrix(totalStatsStandard[[1]])
     y_train <- as.matrix(totalStatsStandard[[2]])
@@ -284,13 +273,13 @@ RollingWindowForecastCombination = function(dependent_var, explanatory_vars_data
     
     # Making the models for all the different methods
     # Lasso
-    modelLasso <- glmnet(x_train, y_train, alpha = 1, lambda = lambda, penalty.factor = penalty)
+    modelLasso <- glmnet(x_train, y_train, alpha = 1, lambda = lambda)
     
     # Ridge
-    modelRidge <- glmnet(x_train, y_train, alpha = 0, lambda = lambda, penalty.factor = penalty)
+    modelRidge <- glmnet(x_train, y_train, alpha = 0, lambda = lambda)
     
     # ElasticNet
-    modelElasticNet <- glmnet(x_train, y_train, alpha = alpha, lambda = lambda, penalty.factor = penalty)
+    modelElasticNet <- glmnet(x_train, y_train, alpha = alpha, lambda = lambda)
     
     # AdaptiveLasso
     model1 <- stats::lm(y_train ~ x_train-1)
@@ -302,9 +291,8 @@ RollingWindowForecastCombination = function(dependent_var, explanatory_vars_data
         weightsAdaptiveLasso[i] <- 0
       }
     }
-    penaltyAdaptiveLasso <- weightsAdaptiveLasso * penalty
     
-    modelAdaptiveLasso <- glmnet(x_train, y_train, alpha = 1, lambda = 1000, penalty.factor = penaltyAdaptiveLasso)
+    modelAdaptiveLasso <- glmnet(x_train, y_train, alpha = 1, lambda = 1000)
     
     # PCA
     totalStatsPCA <- CreateDataSetNew(dependent_var, factors_PCA, beginTime = beginTime, endTime = endTime)

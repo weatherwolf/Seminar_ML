@@ -144,7 +144,7 @@ RollingWindowTuningPenalized = function(dependent_var, explanatory_vars, method,
     
     for(lambda in lambdaList) {
       for (alpha in alphaList) {
-        
+
         totalErrorLoop <- 0
         
         if (method == "Lasso") {
@@ -194,6 +194,85 @@ RollingWindowTuningPenalized = function(dependent_var, explanatory_vars, method,
   }
   print(totalError)
 }
+
+
+TuneNumberOfLags = function(method, dependent_var, explanatory_vars, beginTime, endTime, lambda, alpha, lagAR) {
+
+  bestBIC <- 100000
+  bestLags <- 1
+  
+  for (i in 1:6) {
+    totalStats <- CreateDataSetNew(dependent_var, explanatory_vars, beginTime = beginTime, endTime = endTime, numlags = i)
+    
+    x_train <- as.matrix(totalStats[[1]])
+    y_train <- as.matrix(totalStats[[2]])
+    x_test <-  as.matrix(totalStats[[3]])
+    y_test <- as.matrix(totalStats[[4]])
+    
+
+    if (is.null(x_train) || is.null(y_train) || is.null(x_test) || is.null(y_test)) {
+      cat("Data not found for given time range.\n")
+      break
+    }
+    
+    if (method == "Lasso") {
+      model <- glmnet(x_train, y_train, alpha = 1, lambda = lambda)
+      BIC = BICglm(model)
+    } else if (method == "Ridge") {
+      model <- glmnet(x_train, y_train, alpha = 0, lambda = lambda)
+      BIC = BICglm(model)
+    } else if (method == "ElasticNet") {
+      model <- glmnet(x_train, y_train, alpha = alpha, lambda = lambda)
+      BIC = BICglm(model)
+    } else if (method == "PCA") {
+      model <- stats::lm(y_train ~ x_train-1)
+      BIC = BIC(model)
+    } else if (method == "SPCA") {
+      model <- stats::lm(y_train ~ x_train-1)
+      BIC = BIC(model)
+    } else if (method == "LAPC") {
+      model <- stats::lm(y_train ~ x_train-1)
+      BIC = BIC(model)
+    } else if (method == "AR") {
+      model <- Arima(dependent_var, order = c(lagAR,0,0), include.mean = FALSE)
+      BIC = BIC(model)
+    } else if (method == "AdaptiveLasso") {
+      model1 <- stats::lm(y_train ~ x_train-1)
+      betas <- coef(model1)  # Extract coefficients from OLS
+      weights <- 1 / (abs(betas))  # Calculate weights (add a small value to avoid division by zero)
+      for (i in seq_along(weights)) {
+        if (is.na(weights[i])) {
+          weights[i] <- 0
+        }
+      }
+      
+      # Fit Adaptive Lasso model with calculated penalty factors
+      model <- glmnet(x_train, y_train, alpha = 1, lambda = lambda)
+      BIC = BICglm(model)
+    } else {
+      stop("Invalid model name provided. Try Lasso, Ridge, ElasticNet, PCA, SPCA, AR, or AdaptiveLasso")
+    }
+    
+    # print(paste(BIC, bestBIC))
+    
+    if (BIC < bestBIC) {
+      bestBIC <- BIC
+      bestLags <- i
+    }
+  }
+  
+  return(bestLags)
+  
+}
+
+BICglm <- function(fit) {
+  tLL <- -deviance(fit)  # Calculate deviance as -2*logLikelihood
+  k <- sum(fit$df != 0) + 1  # Number of parameters, including intercept
+  n <- nobs(fit)  # Number of observations
+  BIC <- log(n) * k - tLL
+  return(BIC)
+}
+
 
 
 
