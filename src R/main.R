@@ -211,22 +211,22 @@ ridge <- "Ridge"
 elasticNet <- "ElasticNet"
 adaptiveLasso <- "AdaptiveLasso"
 
-error_Lasso_nonstat <- RollingWindowNew(dependent_var, expl_var, method=lasso)
-error_Ridge_nonstat <- RollingWindowNew(dependent_var, expl_var, method=ridge)
-error_ElasticNet_nonstat <- RollingWindowNew(dependent_var, expl_var, method=elasticNet, alpha=0.01)
-error_AdaptiveLasso_nonstat <- RollingWindowNew(dependent_var, expl_var, method=adaptiveLasso)
+error_Lasso_stat <- RollingWindowNew(dependent_var, expl_var, method=lasso)
+error_Ridge_stat <- RollingWindowNew(dependent_var, expl_var, method=ridge)
+error_ElasticNet_stat <- RollingWindowNew(dependent_var, expl_var, method=elasticNet, alpha=0.01)
+error_AdaptiveLasso_stat <- RollingWindowNew(dependent_var, expl_var, method=adaptiveLasso)
 
 pca <- "PCA"
 spca <- "SPCA"
 lapc <- "LAPC"
 
-error_PCA_nonstat <- RollingWindowNew(dependent_var, factors_PCA, method=pca)
-error_SPCA_nonstat <- RollingWindowNew(dependent_var, factors_SPCA, method=spca)
-error_LAPC_nonstat <- RollingWindowNew(dependent_var, factors_LAPC, method=lapc)
+error_PCA_stat <- RollingWindowNew(dependent_var, factors_PCA, method=pca)
+error_SPCA_stat <- RollingWindowNew(dependent_var, factors_SPCA, method=spca)
+error_LAPC_stat <- RollingWindowNew(dependent_var, factors_LAPC, method=lapc)
 
 ar <- "AR"
 
-error_AR_nonstat <- RollingWindowNew(dependent_var, expl_var, method=ar, lag=lag)
+error_AR_stat <- RollingWindowNew(dependent_var, expl_var, method=ar, lag=lag)
 
 
 source("Dataprocessor.R")
@@ -237,16 +237,16 @@ source("ForecastCombinations.R")
 source("Tuning.R")
 
 
-error_forecast_combination_Equal_nonstat <- RollingWindowForecastCombination(dependent_var, expl_var, penalty=penalty, factors_PCA=factors_PCA, 
+error_forecast_combination_Equal_stat <- RollingWindowForecastCombination(dependent_var, expl_var, penalty=penalty, factors_PCA=factors_PCA, 
                                                                factors_SPCA=factors_SPCA, factors_LAPC=factors_LAPC, lag=lag, method="equal")
 
-error_forecast_combination_OLS_nonstat <- RollingWindowForecastCombination(dependent_var, expl_var, penalty=penalty, factors_PCA=factors_PCA, 
+error_forecast_combination_OLS_stat <- RollingWindowForecastCombination(dependent_var, expl_var, penalty=penalty, factors_PCA=factors_PCA, 
                                                                factors_SPCA=factors_SPCA, factors_LAPC=factors_LAPC, lag=lag, method="Ols")
 
-error_forecast_combination_Lasso_nonstat <- RollingWindowForecastCombination(dependent_var, expl_var, penalty=penalty, factors_PCA=factors_PCA, 
+error_forecast_combination_Lasso_stat <- RollingWindowForecastCombination(dependent_var, expl_var, penalty=penalty, factors_PCA=factors_PCA, 
                                                                factors_SPCA=factors_SPCA, factors_LAPC=factors_LAPC, lag=lag, method="Lasso")
 
-error_forecast_combination_Ridge_nonstat <- RollingWindowForecastCombination(dependent_var, expl_var, penalty=penalty, factors_PCA=factors_PCA, 
+error_forecast_combination_Ridge_stat <- RollingWindowForecastCombination(dependent_var, expl_var, penalty=penalty, factors_PCA=factors_PCA, 
                                                                factors_SPCA=factors_SPCA, factors_LAPC=factors_LAPC, lag=lag, method="Ridge")
 
 
