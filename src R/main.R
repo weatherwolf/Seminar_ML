@@ -200,10 +200,9 @@ alphaList <- seq(0.1, 0.9, by = 0.1)
 
 dependent_var = as.data.frame(dependent_var_RPI)
 expl_var = as.data.frame(expl_vars_RPI)
-penalty = penalty_factor_RPI
-factors_PCA = as.data.frame(factors_and_w_RPI)
-factors_SPCA = as.data.frame(factors_and_w_spca_RPI)
-factors_LAPC = as.data.frame(factors_and_w_lapc_RPI)
+factors_PCA = as.data.frame(factors_RPI)
+factors_SPCA = as.data.frame(factors_spca_RPI)
+factors_LAPC = as.data.frame(factors_lapc_RPI)
 lag = best_lag_RPI
 
 
