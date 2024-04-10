@@ -28,14 +28,4 @@ pca_factors_and_w <- function(x, w, k=10) {
   return (factors_and_w)
 }
 
-factors_RPI <- pca_factors(expl_vars_RPI)
-factors_INDPRO <- pca_factors(expl_vars_INDPRO)
-factors_CMRMTSPLx <- pca_factors(expl_vars_CMRMTSPLx)
-factors_PAYEMS <- pca_factors(expl_vars_PAYEMS)
-factors_WPSFD49207 <- pca_factors(expl_vars_WPSFD49207)
-factors_CPIAUCSL <- pca_factors(expl_vars_CPIAUCSL)
-factors_CPIULFSL <- pca_factors(expl_vars_CPIULFSL)
-factors_PCEPI <- pca_factors(expl_vars_PCEPI)
-
-
 

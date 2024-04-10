@@ -32,14 +32,7 @@ spca_factors_and_w <- function(x, w, k=10) {
   return (factors_and_w)
 }
 
-factors_spca_RPI <- spca_factors(expl_vars_RPI)
-factors_spca_INDPRO <- spca_factors(expl_vars_INDPRO)
-factors_spca_CMRMTSPLx <- spca_factors(expl_vars_CMRMTSPLx)
-factors_spca_PAYEMS <- spca_factors(expl_vars_PAYEMS)
-factors_spca_WPSFD49207 <- spca_factors(expl_vars_WPSFD49207)
-factors_spca_CPIAUCSL <- spca_factors(expl_vars_CPIAUCSL)
-factors_spca_CPIULFSL <- spca_factors(expl_vars_CPIULFSL)
-factors_spca_PCEPI <- spca_factors(expl_vars_PCEPI)
+
 
 
 
