@@ -4,51 +4,6 @@ library(MASS)
 library(sparsepca)
 library(lars)
 
-cleanData = function(data, name) {
-  
-  if (name == '2015-07.csv' || name == '2024-02.csv') {
-    data$Column_1 <- data$TB3MS - data$CP3Mx
-    data$Column_2 <- data$GS10 - data$GS1
-    
-    # Change the first value of both columns to 2
-    data[1, c("Column_1", "Column_2")] <- 1
-    
-    transform <- data[1, ]
-    data <- data[-1, ]
-    
-    # data$sasdate <- as.Date(data$sasdate)
-    
-    data <- na.omit(data) 
-    # TransformData(transform)
-  }
-  return(data)
-}
-
-TransformData = function(data, transform) {
-  for (column in names(transform)) {
-    if (column == 'sasdate') next
-    
-    transformation <- as.integer(transform[[column]])
-    
-    switch(transformation,
-           "2" = data[[column]] <- diff(data[[column]]),
-           "3" = data[[column]] <- diff(diff(data[[column]])),
-           "4" = data[[column]] <- log(data[[column]]),
-           "5" = data[[column]] <- diff(log(data[[column]])),
-           "6" = data[[column]] <- diff(diff(log(data[[column]]))),
-           "7" = {
-             part1 <- (data[[column]] / lag(data[[column]], 1)) - 1
-             part2 <- (lag(data[[column]], 1) / lag(data[[column]], 2)) - 1
-             data[[column]] <- part1 - part2
-           },
-           stop("Invalid transformation value")
-    )
-  }
-  
-  self$data <- data_original
-  self$data_stat <- data[-c(1, 2), ]
-}
-
 CreateDataSetNew <- function(dependent_var, explanatory_vars, beginTime, endTime, numlags=1) {
 
   x_train <- explanatory_vars[(beginTime+6):endTime, ]

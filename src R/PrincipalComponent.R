@@ -29,3 +29,6 @@ pca_factors_and_w <- function(x, w, k=10) {
 }
 
 
+
+
+

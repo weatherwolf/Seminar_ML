@@ -12,7 +12,7 @@ library(dm)
 source("Dataprocessor.R")
 source("Forecast.R")
 source("Model.R")
-source("Tuning.R")
+# source("Tuning.R")
 source("SparsePCA.R")
 source("LA(PC).R")
 source("PrincipalComponent.R")
@@ -190,7 +190,7 @@ best_lag_PCEPI <- AR_model(expl_vars_PCEPI, dependent_var_PCEPI)
 source("Dataprocessor.R")
 source("Forecast.R")
 source("Model.R")
-source("Tuning.R")
+#source("Tuning.R")
 
 lambdaList <- 10^(-10:4)
 alphaList <- seq(0.1, 0.9, by = 0.1)
@@ -203,7 +203,7 @@ expl_var = as.data.frame(expl_vars_RPI)
 factors_PCA = as.data.frame(factors_RPI)
 factors_SPCA = as.data.frame(factors_spca_RPI)
 factors_LAPC = as.data.frame(factors_lapc_RPI)
-lag = best_lag_RPI
+lag <- 6
 
 
 lasso <- "Lasso"
@@ -211,18 +211,18 @@ ridge <- "Ridge"
 elasticNet <- "ElasticNet"
 adaptiveLasso <- "AdaptiveLasso"
 
-error_Lasso_stat <- RollingWindowNew(dependent_var, expl_var, method=lasso)
-error_Ridge_stat <- RollingWindowNew(dependent_var, expl_var, method=ridge)
-error_ElasticNet_stat <- RollingWindowNew(dependent_var, expl_var, method=elasticNet, alpha=0.01)
-error_AdaptiveLasso_stat <- RollingWindowNew(dependent_var, expl_var, method=adaptiveLasso)
+error_Lasso_stat <- RollingWindowNew(dependent_var, expl_var, method=lasso, lag=lag)
+error_Ridge_stat <- RollingWindowNew(dependent_var, expl_var, method=ridge, lag=lag)
+error_ElasticNet_stat <- RollingWindowNew(dependent_var, expl_var, method=elasticNet, alpha=0.01, lag=lag)
+error_AdaptiveLasso_stat <- RollingWindowNew(dependent_var, expl_var, method=adaptiveLasso, lag=lag)
 
 pca <- "PCA"
 spca <- "SPCA"
 lapc <- "LAPC"
 
-error_PCA_stat <- RollingWindowNew(dependent_var, factors_PCA, method=pca)
-error_SPCA_stat <- RollingWindowNew(dependent_var, factors_SPCA, method=spca)
-error_LAPC_stat <- RollingWindowNew(dependent_var, factors_LAPC, method=lapc)
+error_PCA_stat <- RollingWindowNew(dependent_var, factors_PCA, method=pca, lag=lag)
+error_SPCA_stat <- RollingWindowNew(dependent_var, factors_SPCA, method=spca, lag=lag)
+error_LAPC_stat <- RollingWindowNew(dependent_var, factors_LAPC, method=lapc,lag=lag)
 
 ar <- "AR"
 

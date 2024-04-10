@@ -17,8 +17,6 @@ yBar = function(x, coef, intercept) {
   return(y_bar)
 }
 
-adaptiveLasso <- "AdaptiveLasso"
-error_AdaptiveLasso_stat <- RollingWindowNew(dependent_var, expl_var, method=adaptiveLasso)
 
 
 RollingWindowNew = function(dependent_var, explanatory_vars, method, lambda= 1, alpha = 0.5, penalty=NULL, lag=1) {
@@ -37,12 +35,15 @@ RollingWindowNew = function(dependent_var, explanatory_vars, method, lambda= 1, 
   while (endTime + 1 <= nrow(explanatory_vars)) {
     numberOfWindows <- numberOfWindows + 1
     
-    if (method %in% c("Lasso", "Ridge", "ElasticNet", "AdaptiveLasso", "PCA", "SPCA", "LAPC") ){
-      dataLag <- TuneNumberOfLags(method=method, dependent_var, explanatory_vars, beginTime=beginTime, endTime=endTime, lambda=lambda, alpha=alpha, lagAR=lag)
-    }
-    else {
-      dataLag = 0
-    }
+    dataLag = lag
+    # if (method %in% c("Lasso", "Ridge", "ElasticNet", "AdaptiveLasso", "PCA", "SPCA", "LAPC")){
+    #   dataLag <- TuneNumberOfLags(method=method, dependent_var, explanatory_vars, beginTime=beginTime, endTime=endTime, lambda=lambda, alpha=alpha, lagAR=lag)
+    # }
+    # else {
+    #   dataLag = 0
+    # }
+    
+    
     totalStats <- CreateDataSetNew(dependent_var, explanatory_vars, beginTime = beginTime, endTime = endTime, numlags=dataLag)
     
     x_train <- as.matrix(totalStats[[1]])
@@ -72,13 +73,17 @@ RollingWindowNew = function(dependent_var, explanatory_vars, method, lambda= 1, 
     } else if (method == "AR") {
       model <- NULL
     } else if (method == "AdaptiveLasso") {
-      model1 <- stats::lm(as.matrix(y_train) ~ as.matrix(x_train-1))
+      model1 <- stats::lm(as.matrix(y_train) ~ as.matrix(x_train)-1)
       betas <- coef(model1)  # Extract coefficients from Lasso model
       weights <- 1 / (abs(betas))  # Calculate weights (add a small value to avoid division by zero)
-    
+      for (i in seq_along(weights)) {
+        if (is.na(weights[i])) {
+          weights[i] <- 0
+        }
+      }
       
-      # Fit Adaptive Lasso model with calculated weights
-      model <- glmnet(as.matrix(x_train), as.matrix(y_train), weights = weights, alpha = 1, lambda = 1000)
+      # Fit Adaptive Lasso model with calculated penalty factors
+      model <- glmnet(as.matrix(x_train), as.matrix(y_train), penalty.factor = weights, alpha = 1, lambda = 10000)
     } else {
       stop("Invalid model name provided. Try Lasso, Ridge, ElasticNet, PCA, SPCA, LAPC, AR, AdaptiveLasso or Random Forest")
     }
@@ -186,17 +191,17 @@ RollingWindowForecastCombination = function(dependent_var, explanatory_vars, pen
     modelElasticNet <- glmnet(as.matrix(x_train), as.matrix(y_train), alpha = alpha, lambda = lambda)
     
     # AdaptiveLasso
-    model1 <- stats::lm(as.matrix(y_train) ~ as.matrix(x_train-1))
-    
-    betasAdaptiveLasso <- coef(model1)  # Extract coefficients from Lasso model
-    weightsAdaptiveLasso <- 1 / (abs(betasAdaptiveLasso))  # Calculate weights (add a small value to avoid division by zero)
-    for (i in seq_along(weightsAdaptiveLasso)) {
-      if (is.na(weightsAdaptiveLasso[i])) {
-        weightsAdaptiveLasso[i] <- 0
+    model1 <- stats::lm(as.matrix(y_train) ~ as.matrix(x_train)-1)
+    betas <- coef(model1)  # Extract coefficients from Lasso model
+    weights <- 1 / (abs(betas))  # Calculate weights (add a small value to avoid division by zero)
+    for (i in seq_along(weights)) {
+      if (is.na(weights[i])) {
+        weights[i] <- 0
       }
     }
     
-    modelAdaptiveLasso <- glmnet(as.matrix(x_train), as.matrix(y_train), alpha = 1, lambda = 1000)
+    # Fit Adaptive Lasso model with calculated penalty factors
+    model <- glmnet(as.matrix(x_train), as.matrix(y_train), penalty.factor = weights, alpha = 1, lambda = 10000)
     
     # PCA
     totalStatsPCA <- CreateDataSetNew(dependent_var, factors_PCA, beginTime = beginTime, endTime = endTime)
