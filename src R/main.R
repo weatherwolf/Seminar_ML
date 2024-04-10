@@ -174,7 +174,7 @@ factors_lapc_PCEPI <- lapc_factors(x=expl_vars_PCEPI, y=dependent_var_PCEPI)
 #### AR ####
 source("AR_model.R")
 best_lag_RPI <- AR_model(expl_vars_RPI, dependent_var_RPI)
-best_lag_INDPRO <- AR_model(expl_vars_CMRMTSPLx, dependent_var_INDPRO)
+best_lag_INDPRO <- AR_model(expl_vars_INDPRO, dependent_var_INDPRO)
 best_lag_CMRMTSPLx  <- AR_model(expl_vars_CMRMTSPLx, dependent_var_CMRMTSPLx)
 best_lag_PAYEMS     <- AR_model(expl_vars_PAYEMS, dependent_var_PAYEMS)
 best_lag_WPSFD49207 <- AR_model(expl_vars_WPSFD49207, dependent_var_WPSFD49207)
