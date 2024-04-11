@@ -8,18 +8,22 @@ CreateDataSetNew <- function(dependent_var, explanatory_vars, beginTime, endTime
 
   x_train <- explanatory_vars[(beginTime+6):endTime, ]
   
-  for (i in 1:numlags) {
-    lagged_var <- dependent_var[(beginTime+6-i):(endTime-i), ]
-    x_train <- cbind(x_train, lagged_var)
+  if (numlags > 0){
+    for (i in 1:numlags) {
+      lagged_var <- dependent_var[(beginTime+6-i):(endTime-i), ]
+      x_train <- cbind(x_train, lagged_var)
+    }
   }
   
   y_train <- dependent_var[(beginTime+6):endTime,]
   
   x_test <- explanatory_vars[endTime,]
   
-  for (i in 1:numlags) {
-    lagged_var <- dependent_var[(endTime-i), ]
-    x_test <- cbind(x_test, lagged_var)
+  if(numlags > 0){  
+    for (i in 1:numlags) {
+      lagged_var <- dependent_var[(endTime-i), ]
+      x_test <- cbind(x_test, lagged_var)
+    }
   }
   
   y_test <- dependent_var[(endTime+1),]
@@ -89,3 +93,4 @@ lapc_factors <- function(x, y, k=10, max_steps=30) {
 #   
 #   return(list(data_w, data_x))
 # }
+

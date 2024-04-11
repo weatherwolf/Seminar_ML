@@ -7,12 +7,15 @@ library(BreakPoints)
 library(strucchange)
 library(changepoint)
 library(dm)
+library(forecast)
+library(tseries)
+library(randomForest)
 
 # # Load custom functions from R scripts
 source("Dataprocessor.R")
 source("Forecast.R")
 source("Model.R")
-# source("Tuning.R")
+source("Tuning.R")
 source("SparsePCA.R")
 source("LA(PC).R")
 source("PrincipalComponent.R")
@@ -173,18 +176,21 @@ factors_lapc_PCEPI <- lapc_factors(x=expl_vars_PCEPI, y=dependent_var_PCEPI)
 
 #### AR ####
 source("AR_model.R")
-best_lag_RPI <- AR_model(expl_vars_RPI, dependent_var_RPI)
-best_lag_INDPRO <- AR_model(expl_vars_INDPRO, dependent_var_INDPRO)
-best_lag_CMRMTSPLx  <- AR_model(expl_vars_CMRMTSPLx, dependent_var_CMRMTSPLx)
-best_lag_PAYEMS     <- AR_model(expl_vars_PAYEMS, dependent_var_PAYEMS)
-best_lag_WPSFD49207 <- AR_model(expl_vars_WPSFD49207, dependent_var_WPSFD49207)
-best_lag_CPIAUCSL <- AR_model(expl_vars_CPIAUCSL, dependent_var_CPIAUCSL)
-best_lag_CPIULFSL <- AR_model(expl_vars_CPIULFSL, dependent_var_CPIULFSL)
-best_lag_PCEPI <- AR_model(expl_vars_PCEPI, dependent_var_PCEPI)
+best_lag_RPI <- 6
+best_lag_INDPRO <- 3
+best_lag_CMRMTSPLx  <- 4
+best_lag_PAYEMS     <- 4
+best_lag_WPSFD49207 <- 6
+best_lag_CPIAUCSL <- 6
+best_lag_CPIULFSL <- 6
+best_lag_PCEPI <- 6
 
 
-############################################################ 
-############### Code used to created outputs ############### 
+
+############################################################
+#                                                          #
+#               Code used to created outputs               # 
+#                                                          #
 ############################################################ 
 
 source("Dataprocessor.R")
@@ -203,7 +209,7 @@ expl_var = as.data.frame(expl_vars_RPI)
 factors_PCA = as.data.frame(factors_RPI)
 factors_SPCA = as.data.frame(factors_spca_RPI)
 factors_LAPC = as.data.frame(factors_lapc_RPI)
-lag <- 6
+lag <- best_lag_RPI
 
 
 lasso <- "Lasso"
@@ -228,6 +234,11 @@ ar <- "AR"
 
 error_AR_stat <- RollingWindowNew(dependent_var, expl_var, method=ar, lag=lag)
 
+EqualWeights <- "Equal Weights"
+RF <- "Random Forest"
+error_RF_stat <- RollingWindowNew(dependent_var, factors_LAPC, method=lapc,lag=lag)
+
+# print(paste(error_AR_stat,",",error_Lasso_stat,",", error_Ridge_stat,"," ,error_ElasticNet_stat, ",",error_AdaptiveLasso_stat,",", error_PCA_stat, ",",error_SPCA_stat,"," ,error_LAPC_stat, ",",error_forecast_combination_Equal_stat, ",",error_forecast_combination_OLS_stat,",", error_forecast_combination_Lasso_stat,",", error_forecast_combination_Ridge_stat))
 
 source("Dataprocessor.R")
 source("Forecast.R")
@@ -236,36 +247,28 @@ source("Tuning.R")
 source("ForecastCombinations.R")
 source("Tuning.R")
 
+dependent_var = as.data.frame(dependent_var_RPI)
+expl_var = as.data.frame(expl_vars_RPI)
+factors_PCA = as.data.frame(factors_RPI)
+factors_SPCA = as.data.frame(factors_spca_RPI)
+factors_LAPC = as.data.frame(factors_lapc_RPI)
+lag <- best_lag_RPI
 
-error_forecast_combination_Equal_stat <- RollingWindowForecastCombination(dependent_var, expl_var, penalty=penalty, factors_PCA=factors_PCA, 
-                                                               factors_SPCA=factors_SPCA, factors_LAPC=factors_LAPC, lag=lag, method="equal")
-
-error_forecast_combination_OLS_stat <- RollingWindowForecastCombination(dependent_var, expl_var, penalty=penalty, factors_PCA=factors_PCA, 
-                                                               factors_SPCA=factors_SPCA, factors_LAPC=factors_LAPC, lag=lag, method="Ols")
-
-error_forecast_combination_Lasso_stat <- RollingWindowForecastCombination(dependent_var, expl_var, penalty=penalty, factors_PCA=factors_PCA, 
-                                                               factors_SPCA=factors_SPCA, factors_LAPC=factors_LAPC, lag=lag, method="Lasso")
-
-error_forecast_combination_Ridge_stat <- RollingWindowForecastCombination(dependent_var, expl_var, penalty=penalty, factors_PCA=factors_PCA, 
-                                                               factors_SPCA=factors_SPCA, factors_LAPC=factors_LAPC, lag=lag, method="Ridge")
+y_hat_matrix <- RollingWindowYHat(dependent_var, expl_var, factors_PCA=factors_PCA, lag=lag)
 
 
-print(paste("Lasso RMSE over rolling window is:", error_Lasso_nonstat))
-print(error_Lasso_nonstat)
-print(paste("Ridge RMSE over rolling window is:", error_Ridge/error_AR))
-print(paste("Elastic Net RMSE over rolling window is:", error_ElasticNet/error_AR))
-print(paste("Adaptive Lasso RMSE over rolling window is:", error_AdaptiveLasso/error_AR))
-print(paste("PCA RMSE over rolling window is:", error_PCA/error_AR))
-print(paste("SPCA RMSE over rolling window is:", error_SPCA/error_AR))
-print(paste("LAPC RMSE over rolling window is:", error_LAPC/error_AR))
-print(paste("AR RMSE over rolling window is:", error_AR/error_AR))
-print(paste("Forecast combination Equal RMSE over rolling window is:", error_forecast_combination_Equal/error_AR))
-print(paste("Forecast combination OLS RMSE over rolling window is:", error_forecast_combination_OLS/error_AR))
-print(paste("Forecast combination Lasso RMSE over rolling window is:", error_forecast_combination_Lasso/error_AR))
-print(paste("Forecast combination Ridge RMSE over rolling window is:", error_forecast_combination_Ridge/error_AR))
 
-# print(paste(error_AR_nonstat,",",error_Lasso_nonstat,",", error_Ridge_nonstat,"," ,error_ElasticNet_nonstat, ",",error_AdaptiveLasso_nonstat,",", error_PCA_nonstat, ",",error_SPCA_nonstat,"," ,error_LAPC_nonstat, ",",error_forecast_combination_Equal_nonstat, ",",error_forecast_combination_OLS_nonstat,",", error_forecast_combination_Lasso_nonstat,",", error_forecast_combination_Ridge_nonstat))
+dependent_var = as.data.frame(dependent_var_RPI)
+dependent_var <- as.data.frame(dependent_var[121:(nrow(dependent_var)), ])
+expl_var = as.data.frame(y_hat_matrix)
 
+
+
+Error_Forecast_Combination_Lasso <- RollingWindowNew(dependent_var, expl_var, method=lasso, lag=0)
+Error_Forecast_Combination_Ridge <- RollingWindowNew(dependent_var, expl_var, method=ridge, lag=0)
+Error_Forecast_Combination_OLS <- RollingWindowNew(dependent_var, expl_var, method=pca, lag=0)
+Error_Forecast_Combination_EQW <- RollingWindowNew(dependent_var, expl_var, method=EqualWeights, lag=0)
+Error_Forecast_Combination_RF <- RollingWindowNew(dependent_var, expl_var, method=RF, lag=0)
 
 
 
@@ -277,12 +280,13 @@ print(paste("Forecast combination Ridge RMSE over rolling window is:", error_for
 
 
 
-Diebold_Lasso <- dm.test(error_Lasso_nonstat, error_AR_nonstat, h=1)
-Diebold_Ridge <- dm.test(error_Ridge_nonstat, error_AR_nonstat, h=1)
-Diebold_ElasticNet <- dm.test(error_ElasticNet_nonstat, error_AR_nonstat, h=1)
-Diebold_PCA <- dm.test(error_PCA_nonstat, error_AR_nonstat, h=1)
-Diebold_SPCA <- dm.test(error_SPCA_nonstat, error_AR_nonstat, h=1)
-Diebold_LAPC <- dm.test(error_LAPC_nonstat, error_AR_nonstat, h=1)
+Diebold_Lasso <- dm.test(error_Lasso_stat, error_AR_stat, h=1)
+Diebold_Ridge <- dm.test(error_Ridge_stat, error_AR_stat, h=1)
+Diebold_ElasticNet <- dm.test(error_ElasticNet_stat, error_AR_stat, h=1)
+Diebold_PCA <- dm.test(error_PCA_stat, error_AR_stat, h=1)
+Diebold_SPCA <- dm.test(error_SPCA_stat, error_AR_stat, h=1)
+Diebold_LAPC <- dm.test(error_LAPC_stat, error_AR_stat, h=1)
+Diebold_FC_Lasso <- dm.test(Error_Forecast_Combination_Lasso, error_AR_stat, h=1)
 
 print(Diebold_Lasso)
 print(Diebold_Ridge)

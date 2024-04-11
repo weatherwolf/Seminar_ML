@@ -19,7 +19,7 @@ yBar = function(x, coef, intercept) {
 
 
 
-RollingWindowNew = function(dependent_var, explanatory_vars, method, lambda= 1, alpha = 0.5, penalty=NULL, lag=1) {
+RollingWindowNew = function(dependent_var, explanatory_vars, method, lambda= 1, alpha = 0.5, lag=1) {
   totalError <- 0
   numberOfWindows <- 0
   
@@ -27,23 +27,11 @@ RollingWindowNew = function(dependent_var, explanatory_vars, method, lambda= 1, 
   endTime <- 120
   MSE <- vector("numeric", length = 0)
   
-  #if (is.null(penalty)) {
-  #  penalty <- rep(1,ncol(explanatory_vars))
-  #}
-  
   
   while (endTime + 1 <= nrow(explanatory_vars)) {
     numberOfWindows <- numberOfWindows + 1
     
     dataLag = lag
-    # if (method %in% c("Lasso", "Ridge", "ElasticNet", "AdaptiveLasso", "PCA", "SPCA", "LAPC")){
-    #   dataLag <- TuneNumberOfLags(method=method, dependent_var, explanatory_vars, beginTime=beginTime, endTime=endTime, lambda=lambda, alpha=alpha, lagAR=lag)
-    # }
-    # else {
-    #   dataLag = 0
-    # }
-    
-    
     totalStats <- CreateDataSetNew(dependent_var, explanatory_vars, beginTime = beginTime, endTime = endTime, numlags=dataLag)
     
     x_train <- as.matrix(totalStats[[1]])
@@ -73,8 +61,8 @@ RollingWindowNew = function(dependent_var, explanatory_vars, method, lambda= 1, 
     } else if (method == "AR") {
       model <- NULL
     } else if (method == "AdaptiveLasso") {
-      model1 <- stats::lm(as.matrix(y_train) ~ as.matrix(x_train)-1)
-      betas <- coef(model1)  # Extract coefficients from Lasso model
+      model1 <-  glmnet(as.matrix(x_train), as.matrix(y_train), alpha = 0, lambda = lambda)
+      betas <- coef(model1)[-1]  # Extract coefficients from Lasso model
       weights <- 1 / (abs(betas))  # Calculate weights (add a small value to avoid division by zero)
       for (i in seq_along(weights)) {
         if (is.na(weights[i])) {
@@ -82,8 +70,9 @@ RollingWindowNew = function(dependent_var, explanatory_vars, method, lambda= 1, 
         }
       }
       
-      # Fit Adaptive Lasso model with calculated penalty factors
-      model <- glmnet(as.matrix(x_train), as.matrix(y_train), penalty.factor = weights, alpha = 1, lambda = 10000)
+      model <- glmnet(as.matrix(x_train), as.matrix(y_train), penalty.factor = weights, alpha=1,lambda=1)
+    } else if (method == "Equal Weights") {
+      model <- NULL
     } else {
       stop("Invalid model name provided. Try Lasso, Ridge, ElasticNet, PCA, SPCA, LAPC, AR, AdaptiveLasso or Random Forest")
     }
@@ -114,23 +103,42 @@ RollingWindowNew = function(dependent_var, explanatory_vars, method, lambda= 1, 
       
     } else if (method %in% c("AR")){
       
-      model <- Arima(dependent_var, order = c(lag,0,0), include.mean = FALSE)
-      
-      intercept = 0
-      coef = as.data.frame(coef(model))
+      tryCatch(
+        {
+          model <- Arima(y_train, order = c(lag, 0, 0), include.mean = FALSE)
+          intercept = 0
+          coef = as.data.frame(coef(model))
+          
+          y_bar <- yBar(y_train[(nrow - lag+1):nrow, ], coef, intercept)
+        },
+        error = function(e) {
+          y_bar=0
+        }
+      )
       
       nrow <- nrow(y_train)
       
-      y_bar <- yBar(y_train[(nrow - lag):nrow, ], coef, intercept)
+      y_bar <- yBar(y_train[(nrow - lag+1):nrow, ], coef, intercept)
       
       MSE[length(MSE) + 1] <- (y_test-y_bar)*(y_test-y_bar)
       totalError <- totalError + (y_test-y_bar)*(y_test-y_bar)
       
-    } else if (method %in% c("random forrest")) {
+    } else if (method %in% c("Random Forest")) {
+      
+      y_bar <- predict(object=model, newdata=x_test)
       
       MSE[length(MSE) + 1] <- (y_test-y_bar)*(y_test-y_bar)
-      y_bar <- predict(object=model, newdata=x_test)
-      totalError <- (y_test-y_bar)*(y_test-y_bar)
+      totalError <- totalError + (y_test-y_bar)*(y_test-y_bar)
+      
+    } else if (method == "Equal Weights") {
+      intercept <- 0
+      
+      coef <- rep(1/3, 3)
+      
+      y_bar <- yBar(x_test, coef, intercept)
+      
+      MSE[length(MSE) + 1] <- (y_test-y_bar)*(y_test-y_bar)
+      totalError <- totalError + (y_test-y_bar)*(y_test-y_bar)
       
     } else {
       
@@ -140,7 +148,6 @@ RollingWindowNew = function(dependent_var, explanatory_vars, method, lambda= 1, 
     beginTime <- beginTime + 1
     endTime <- endTime + 1
   }
-  
   print(sqrt(totalError/numberOfWindows))
   return(unlist(MSE))
 }
@@ -149,26 +156,20 @@ RollingWindowNew = function(dependent_var, explanatory_vars, method, lambda= 1, 
 source("ForecastCombinations.R")
 
 
-RollingWindowForecastCombination = function(dependent_var, explanatory_vars, penalty, 
-                                            factors_PCA, factors_SPCA, factors_LAPC, lag, method="equal", alpha=0.5, lambda=1) {
-  totalError <- 0
-  totalErrorLasso <- 0
-  numberOfWindows <- 0
+RollingWindowYHat = function(dependent_var, explanatory_vars, 
+                             factors_PCA, lag, alpha=0.5, lambda=1) {
   
   
   beginTime <- 1
   endTime <- 120
   
-  if (is.null(penalty)) {
-    penalty <- rep(1,ncol(explanatory_vars))
-  }
+  yHatMatrix <- matrix(nrow = 0, ncol = 3)
+  colnames(yHatMatrix) <- c("Lasso", "PCA", "AR")
+  y_hat_list <- numeric(3)
   
-  PredictionOutputs = data.frame()
   while (endTime + 1 <= nrow(explanatory_vars)) {
-    predictionsTimeT <- vector("numeric", length = 0)
-    numberOfWindows <- numberOfWindows + 1
-    
-    totalStatsStandard <- CreateDataSetNew(dependent_var, explanatory_vars, beginTime = beginTime, endTime = endTime)
+
+    totalStatsStandard <- CreateDataSetNew(dependent_var, explanatory_vars, beginTime = beginTime, endTime = endTime, numlags=lag)
     
     x_train <- as.matrix(totalStatsStandard[[1]])
     y_train <- as.matrix(totalStatsStandard[[2]])
@@ -184,183 +185,44 @@ RollingWindowForecastCombination = function(dependent_var, explanatory_vars, pen
     # Lasso
     modelLasso <- glmnet(as.matrix(x_train), as.matrix(y_train), alpha = 1, lambda = lambda)
     
-    # Ridge
-    modelRidge <- glmnet(as.matrix(x_train), as.matrix(y_train), alpha = 0, lambda = lambda)
-    
-    # ElasticNet
-    modelElasticNet <- glmnet(as.matrix(x_train), as.matrix(y_train), alpha = alpha, lambda = lambda)
-    
-    # AdaptiveLasso
-    model1 <- stats::lm(as.matrix(y_train) ~ as.matrix(x_train)-1)
-    betas <- coef(model1)  # Extract coefficients from Lasso model
-    weights <- 1 / (abs(betas))  # Calculate weights (add a small value to avoid division by zero)
-    for (i in seq_along(weights)) {
-      if (is.na(weights[i])) {
-        weights[i] <- 0
-      }
-    }
-    
-    # Fit Adaptive Lasso model with calculated penalty factors
-    model <- glmnet(as.matrix(x_train), as.matrix(y_train), penalty.factor = weights, alpha = 1, lambda = 10000)
-    
     # PCA
-    totalStatsPCA <- CreateDataSetNew(dependent_var, factors_PCA, beginTime = beginTime, endTime = endTime)
-    x_trainPCA <- as.matrix(totalStatsStandard[[1]])
-    y_trainPCA <- as.matrix(totalStatsStandard[[2]])
-    x_testPCA <-  as.matrix(totalStatsStandard[[3]])
-    y_testPCA <- as.matrix(totalStatsStandard[[4]])
+    totalStatsPCA <- CreateDataSetNew(dependent_var, factors_PCA, beginTime = beginTime, endTime = endTime, numlags=lag)
+    x_trainPCA <- as.matrix(totalStatsPCA[[1]])
+    y_trainPCA <- as.matrix(totalStatsPCA[[2]])
+    x_testPCA <-  as.matrix(totalStatsPCA[[3]])
+    y_testPCA <- as.matrix(totalStatsPCA[[4]])
     
     modelPCA <- stats::lm(y_trainPCA ~ x_trainPCA-1)
     
-    # SPCA
-    totalStatsSPCA <- CreateDataSetNew(dependent_var, factors_SPCA, beginTime = beginTime, endTime = endTime)
-    x_trainSPCA <- as.matrix(totalStatsStandard[[1]])
-    y_trainSPCA <- as.matrix(totalStatsStandard[[2]])
-    x_testSPCA <-  as.matrix(totalStatsStandard[[3]])
-    y_testSPCA <- as.matrix(totalStatsStandard[[4]])
-    
-    modelSPCA <- stats::lm(y_trainSPCA ~ x_trainSPCA-1)
-    
-    # LAPC
-    totalStatsLAPC <- CreateDataSetNew(dependent_var, factors_LAPC, beginTime = beginTime, endTime = endTime)
-    x_trainLAPC <- as.matrix(totalStatsStandard[[1]])
-    y_trainLAPC <- as.matrix(totalStatsStandard[[2]])
-    x_testLAPC <-  as.matrix(totalStatsStandard[[3]])
-    y_testLAPC <- as.matrix(totalStatsStandard[[4]])
-    
-    modelLAPC <- stats::lm(y_train ~ x_trainLAPC-1)
-    
-    
     #AR
-    modelAR <- Arima(dependent_var, order = c(lag,0,0), include.mean = FALSE)
+    y_train_AR <- as.vector(y_train[(nrow(y_train)-lag+1):nrow(y_train), ])
+    tryCatch(
+      {
+        # Your ARIMA modeling code here
+        modelAR <- Arima(y_train, order = c(lag, 0, 0), include.mean = FALSE)
+        y_hat_list[3] <- yBar(y_train_AR, coef(modelAR), 0)
+      },
+      error = function(e) {
+        # Handle the error gracefully (e.g., print a message or perform alternative action)
+        print(y_train)
+        cat("An error occurred:", conditionMessage(e), "\n")
+        # Return a default value or handle the error as needed
+      }
+    )
     
-    
-    
-    # Creating the values for the parameters for all methods
-    # Lasso
-    interceptLasso <- coef(modelLasso)[1]
-    coefLasso <- coef(modelLasso)[-1]
-    
-    #Ridge
-    interceptRidge <- coef(modelRidge)[1]
-    coefRidge <- coef(modelRidge)[-1]
-    
-    # ElasticNet
-    interceptElasticNet <- coef(modelElasticNet)[1]
-    coefElasticNet <- coef(modelElasticNet)[-1]
-    
-    # AdaptiveLasso
-    interceptAdaptiveLasso <- coef(modelAdaptiveLasso)[1]
-    coefAdaptiveLassof <- coef(modelAdaptiveLasso)[-1]
-    
-    # PCA
-    interceptPCA <- 0
-    coefPCA <- coef(modelPCA)
-    
-    # SPCA
-    interceptSPCA <- 0
-    coefSPCA <- coef(modelSPCA)
-    
-    # LAPC
-    interceptLAPC <-0
-    coefLAPC <- coef(modelLAPC)
-    
-    #AR
-    interceptAR = 0
-    coefAR = as.data.frame(coef(modelAR))
-    
-    
-    interceptList <- list(interceptLasso, interceptRidge, interceptElasticNet, interceptAdaptiveLasso, interceptPCA, interceptSPCA, interceptLAPC, interceptAR)
-    coefList <- list(coefLasso, coefRidge, coefElasticNet, coefAdaptiveLassof, coefPCA, coefSPCA, coefLAPC, coefAR)
     
     # Make a list of all the different y_hats over all the methods we have made
-    y_hatList <- yHatCalculation(x_train, y_train, interceptList, coefList)
-    y_hatList <- y_hatList[, c(1,5,8)]
-    
-    y_hatListTest <- yHatTestCalculation(x_test, y_train[(nrow(y_train)-lag):nrow(y_train), ], interceptList, coefList)
-    y_hatListTest <- y_hatListTest[, c(1,5,8)]
-    
-    num_rows <- nrow(y_train)
-    
-    parameters <- getForecastCombination(y=y_train[7:num_rows, ], forecasts=y_hatList[7:num_rows, ], type=method)
-    intercept <- 0
-    coef <- parameters
-    
-    y_bar <- yBar(y_hatListTest, coef, intercept)
-    
-    totalError <- totalError+(y_test-y_bar)*(y_test-y_bar)
+    y_hat_list[1] <- yBar(x_test, coef(modelLasso)[-1], coef(modelLasso)[1])
+    y_hat_list[2] <- yBar(x_testPCA, coef(modelPCA), 0)
+    y_hat_list[3] <- yBar(y_train_AR, coef(modelAR), 0)
     beginTime <- beginTime + 1
     endTime <- endTime + 1
-    
-    y_barLasso <- yBar(x_test, coefLasso, interceptLasso)
-    predictionsTimeT[length(predictionsTimeT) + 1] <- y_barLasso
-    y_barRidge <- yBar(x_test, coefRidge, interceptRidge)
-    predictionsTimeT[length(predictionsTimeT) + 1] <- y_barRidge
-    y_barElasticNet <- yBar(x_test, coefElasticNet, interceptElasticNet)
-    predictionsTimeT[length(predictionsTimeT) + 1] <- y_barElasticNet
-    y_barAdaptiveLasso <- yBar(x_test, coefAdaptiveLassof, interceptAdaptiveLasso)
-    predictionsTimeT[length(predictionsTimeT) + 1] <- y_barAdaptiveLasso
-    y_barPCA <- yBar(x_test, coefPCA, interceptPCA)
-    predictionsTimeT[length(predictionsTimeT) + 1] <- y_barPCA
-    y_barSPCA <- yBar(x_test, coefSPCA, interceptSPCA)
-    predictionsTimeT[length(predictionsTimeT) + 1] <- y_barSPCA
-    y_barLAPC <- yBar(x_test, coefLAPC, interceptLAPC)
-    predictionsTimeT[length(predictionsTimeT) + 1] <- y_barLAPC
-    y_barAR <- yBar(x_test, coefAR, interceptAR)
-    predictionsTimeT[length(predictionsTimeT) + 1] <- y_barAR
-    
-    
-    totalErrorLasso <- totalErrorLasso + (y_test-y_barLasso)*(y_test-y_barLasso)
-    
-    
-    PredictionOutputs <- rbind(PredictionOutputs, predictionsTimeT)
+
+    yHatMatrix <- rbind(yHatMatrix, y_hat_list)
   }
-  print(sqrt(totalError/numberOfWindows))
-  names(PredictionOutputs) <- c("Lasso", "Ridge", "ElasticNet", "AdaptiveLasso", "PCA", "SPCA", "LAPC", "AR")
-  print(PredictionOutputs)
+  return(yHatMatrix)
 }
 
-
-
-yHatCalculation = function(x_train, y_train, interceptList, coefList) {
-  num_rows <- nrow(x_train)
-  y_Matrix <- matrix(nrow=num_rows, ncol=8)
-  
-  lags <- nrow(coefList[[8]])
-  
-  for (i in 7:nrow(x_train)) {
-    for (j in 1:7) {
-      y_hat <- interceptList[[j]]
-      y_hat <- y_hat + sum(x_train[i, ] * coefList[[j]])
-      
-      y_Matrix[i, j] <- y_hat
-    }
-    
-    y_hatAR <- sum(y_train[i-lags:i] * coefList[[8]])
-    y_Matrix[i, 8] <- y_hatAR
-  }
-  
-  return(y_Matrix)
-}
-
-yHatTestCalculation = function(x_test, y_train, interceptList, coefList) {
-  num_rows <- nrow(x_test)
-  y_Matrix <- matrix(nrow=num_rows, ncol=8)
-  
-  lags <- nrow(coefList[[8]])
-  
-  for (j in 1:7) {
-    y_hat <- interceptList[[j]]
-    y_hat <- y_hat + sum(x_test[1, ] * coefList[[j]])
-    
-    y_Matrix[1, j] <- y_hat
-  }
-  
-  y_hatAR <- sum(y_train * coefList[[8]])
-  y_Matrix[1, 8] <- y_hatAR
-  
-  return(y_Matrix)
-}
 
 
 

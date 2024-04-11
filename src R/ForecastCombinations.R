@@ -29,3 +29,4 @@ getForecastCombination <- function(y, forecasts, type="equal"){
   }
   
 }
+
