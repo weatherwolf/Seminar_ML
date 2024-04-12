@@ -4,7 +4,7 @@
 
 # k = 10 # number of factors to retrieve
 
-lapc_factors <- function(x, y, k=10, max_steps=30) {
+lapc_factors <- function(x, y, k=30, max_steps=30) {
   ###  LA(PC) method
   ### 
   ### x: the data set from which the components need to be constructed (type data frame)

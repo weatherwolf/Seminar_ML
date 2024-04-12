@@ -1,7 +1,5 @@
 #### PCA ####
-k = 10 # number of factors we want to retrieve using PCA
-
-pca_factors <- function(x, k=10) {
+pca_factors <- function(x, k=30) {
   ### principal component analysis
   ### 
   ### x: the data set from which the components need to be constructed

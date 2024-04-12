@@ -1,3 +1,8 @@
+install.packages("forecast")
+library(forecast)
+install.packages("tseries")
+library(tseries) 
+
 AR_model<-function(x,y){
   best_bic <- Inf
   for(p in 1:6) {
@@ -14,7 +19,7 @@ AR_model<-function(x,y){
 
 #AR models for all dependent variables
 best_lag_RPI <- AR_model(expl_vars_RPI, dependent_var_RPI)
-best_lag_INDPRO <- AR_model(expl_vars_INDPRO, dependent_var_INDPRO)
+best_lag_INDPRO <- AR_model(expl_vars_CMRMTSPLxars_INDPRO, dependent_var_INDPRO)
 best_lag_CMRMTSPLx  <- AR_model(expl_vars_CMRMTSPLx, dependent_var_CMRMTSPLx)
 best_lag_PAYEMS     <- AR_model(expl_vars_PAYEMS, dependent_var_PAYEMS)
 best_lag_WPSFD49207 <- AR_model(expl_vars_WPSFD49207, dependent_var_WPSFD49207)

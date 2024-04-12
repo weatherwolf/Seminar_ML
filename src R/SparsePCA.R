@@ -2,14 +2,14 @@
 # for sparse pca we make use of default values: alpha = 1e-04, beta = 0, so we use the lasso penalty, max_iter = 1000 
 k = 10 # number of factors we want to retrieve using sparse PCA
 
-spca_factors <- function(x, k=10) {
+spca_factors <- function(x, k=30, alpha=0.001) {
   ### sparse principal component analysis
   ### 
   ### x: the data set from which the components need to be constructed (type data frame)
   ### k: number of factors (components) to return
   ###
   ### returns a data frame containing the factors
-  spca <- spca(x, max_iter= 500,  beta = 0, scale = TRUE)
+  spca <- spca(x, max_iter= 500, alpha=alpha,  beta = 0, scale = TRUE)
   loadings_spca <- spca$loadings[,1:k]
   factors_spca <- scale(x) %*% loadings_spca
   
