@@ -27,7 +27,7 @@ lapc_factors <- function(x, y, k=10, max_steps=30) {
     }
   }
   # create data set only containing the selected variables for step 2
-  expl_vars_lapc <- x[,names(x) %in% lars_selected_vars]
+  expl_vars_lapc <- x[,names(as.data.frame(x)) %in% lars_selected_vars]
   # Step 2 for RPI
   lapc <- prcomp(expl_vars_lapc, scale = TRUE) 
   loadings_lapc <- lapc$rotation[,1:k]

@@ -51,12 +51,58 @@ RollingWindowNew = function(dependent_var, explanatory_vars, method, lambda= 1, 
     } else if (method == "ElasticNet") {
       model <- glmnet(as.matrix(x_train), as.matrix(y_train), alpha = alpha, lambda = lambda)
     } else if (method == "Random Forest") {
+      current_names <- names(as.data.frame(x_train))
+      new_names <- c()
+      for (j in 1:dataLag) {
+        if(j == 1) {
+          new_names <- cbind(new_names, "lagged_var_one")
+        }
+        if(j == 2) {
+          new_names <- cbind(new_names, "lagged_var_two")
+        }
+        if(j == 3) {
+          new_names <- cbind(new_names, "lagged_var_three")
+        }
+        if(j == 4) {
+          new_names <- cbind(new_names, "lagged_var_four")
+        }
+        if(j == 5) {
+          new_names <- cbind(new_names, "lagged_var_five")
+        }
+        if(j == 6) {
+          new_names <- cbind(new_names, "lagged_var_six")
+        }
+      }
+      index <- length(current_names) - dataLag + 1
+      current_names[index:length(current_names)] <- new_names
+      print(numberOfWindows)
+      x_train <- as.data.frame(x_train)
+      x_test <- as.data.frame(x_test)
+      names(x_train) <- current_names
+      names(x_test) <- current_names
       model <- randomForest(as.matrix(y_train) ~., as.matrix(x_train), importance = TRUE)
     } else if (method == "PCA") {
+      factor_data <- x_train[, -c((ncol(x_train) - lag + 1):ncol(x_train))]
+      lag_data <- x_train[, (ncol(x_train) - lag + 1):ncol(x_train)]
+      factors <- pca_factors(factor_data)
+      x_train <- as.matrix(cbind(factors, lag_data))
+      x_test <-  as.matrix(x_train[nrow(x_train), ])
       model <- NULL
     } else if (method == "SPCA") {
+      factor_data <- x_train[, -c((ncol(x_train) - lag + 1):ncol(x_train))]
+      lag_data <- x_train[, (ncol(x_train) - lag + 1):ncol(x_train)]
+      factors <- spca_factors(factor_data)
+      x_train <- as.matrix(cbind(factors, lag_data))
+      x_test <-  as.matrix(x_train[nrow(x_train), ])
+      print(numberOfWindows)
       model <- NULL
     } else if (method == "LAPC") {
+      factor_data <- x_train[, -c((ncol(x_train) - lag + 1):ncol(x_train))]
+      lag_data <- x_train[, (ncol(x_train) - lag + 1):ncol(x_train)]
+      factors <- lapc_factors(x=factor_data, y=y_train)
+      x_train <- as.matrix(cbind(factors, lag_data))
+      x_test <-  as.matrix(x_train[nrow(x_train), ])
+      print(numberOfWindows)
       model <- NULL
     } else if (method == "AR") {
       model <- NULL
@@ -73,8 +119,12 @@ RollingWindowNew = function(dependent_var, explanatory_vars, method, lambda= 1, 
       model <- glmnet(as.matrix(x_train), as.matrix(y_train), penalty.factor = weights, alpha=1,lambda=1)
     } else if (method == "Equal Weights") {
       model <- NULL
+    } else if (method == "OLS") {
+      model <- NULL
+    } else if (method == "RF_forecomb") {
+      model <- randomForest(as.matrix(y_train) ~., as.matrix(x_train), importance = TRUE)
     } else {
-      stop("Invalid model name provided. Try Lasso, Ridge, ElasticNet, PCA, SPCA, LAPC, AR, AdaptiveLasso or Random Forest")
+      stop("Invalid model name provided. Try Lasso, Ridge, ElasticNet, PCA, SPCA, LAPC, AR, AdaptiveLasso, OLS or Random Forest")
     }
     
     # Update lambda if applicable
@@ -90,7 +140,7 @@ RollingWindowNew = function(dependent_var, explanatory_vars, method, lambda= 1, 
       MSE[length(MSE) + 1] <- (y_test-y_bar)*(y_test-y_bar)
       totalError <- totalError + (y_test-y_bar)*(y_test-y_bar)
       
-    } else if (method %in% c("PCA", "SPCA", "LAPC")){
+    } else if (method %in% c("PCA", "SPCA", "LAPC", "OLS")){
       
       model <- stats::lm(y_train ~ x_train-1)
       intercept <- 0
@@ -123,7 +173,7 @@ RollingWindowNew = function(dependent_var, explanatory_vars, method, lambda= 1, 
       MSE[length(MSE) + 1] <- (y_test-y_bar)*(y_test-y_bar)
       totalError <- totalError + (y_test-y_bar)*(y_test-y_bar)
       
-    } else if (method %in% c("Random Forest")) {
+    } else if (method %in% c("Random Forest", "RF_forecomb")) {
       
       y_bar <- predict(object=model, newdata=x_test)
       
@@ -157,7 +207,7 @@ source("ForecastCombinations.R")
 
 
 RollingWindowYHat = function(dependent_var, explanatory_vars, 
-                             factors_PCA, lag, alpha=0.5, lambda=1) {
+                             lag, alpha=0.5, lambda=1) {
   
   
   beginTime <- 1
@@ -186,12 +236,13 @@ RollingWindowYHat = function(dependent_var, explanatory_vars,
     modelLasso <- glmnet(as.matrix(x_train), as.matrix(y_train), alpha = 1, lambda = lambda)
     
     # PCA
-    totalStatsPCA <- CreateDataSetNew(dependent_var, factors_PCA, beginTime = beginTime, endTime = endTime, numlags=lag)
-    x_trainPCA <- as.matrix(totalStatsPCA[[1]])
-    y_trainPCA <- as.matrix(totalStatsPCA[[2]])
-    x_testPCA <-  as.matrix(totalStatsPCA[[3]])
-    y_testPCA <- as.matrix(totalStatsPCA[[4]])
-    
+    factor_data <- x_train[, -c((ncol(x_train) - lag + 1):ncol(x_train))]
+    lag_data <- x_train[, (ncol(x_train) - lag + 1):ncol(x_train)]
+    factors_pca <- pca_factors(factor_data)
+    x_trainPCA <- as.matrix(cbind(factors_pca, lag_data))
+    x_testPCA <-  as.matrix(x_trainPCA[nrow(x_trainPCA), ])
+    y_trainPCA <- y_train
+    y_testPCA <- y_test
     modelPCA <- stats::lm(y_trainPCA ~ x_trainPCA-1)
     
     #AR

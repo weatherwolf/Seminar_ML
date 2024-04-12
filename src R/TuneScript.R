@@ -7,9 +7,12 @@ library(BreakPoints)
 library(strucchange)
 library(changepoint)
 library(dm)
-library(forecast)
 library(tseries)
 library(randomForest)
+library(sparsepca)
+library(lars)
+library(ForecastComb)
+
 
 # # Load custom functions from R scripts
 source("Dataprocessor.R")
@@ -96,95 +99,93 @@ dependent_var_CPIAUCSL <- dependent_vars_data$CPIAUCSL
 dependent_var_CPIULFSL <- dependent_vars_data$CPIULFSL
 dependent_var_PCEPI <- dependent_vars_data$PCEP
 
-getHighlyCorrelated <- function(value_cor=0.8, name, data){
-  ### Returns the highly correlated variables in the data with the variable "name", based on if the correlation
-  ### is higher than value_cor or smaller than -(value_cor) (default value is 0.8)
-  ### 
-  ### "name" is included in the highly correlated variables, because correlation with itself is 1
-  
-  highly_cor <- c()
-  correlations <- cor(data)
-  dependent_var_cor <- cbind(correlations[, name])
-  rownames <- rownames(dependent_var_cor)
-  for(cor in dependent_var_cor){
-    if(cor > value_cor || cor < - value_cor) {
-      row_name <- rownames(dependent_var_cor)[which(dependent_var_cor == cor)]
-      highly_cor <- c(highly_cor , row_name)
-    }
-  }
-  return (highly_cor)
-} 
-
-# for each dependent variable, create vector that contains the highly correlated variables
-highly_cor_RPI <- getHighlyCorrelated(name = "RPI", data = data)
-highly_cor_INDPRO <- getHighlyCorrelated(name = "INDPRO", data = data)
-highly_cor_CMRMTSPLx <- getHighlyCorrelated(name = "CMRMTSPLx", data = data)
-highly_cor_PAYEMS <- getHighlyCorrelated(name = "PAYEMS", data = data)
-highly_cor_WPSFD49207 <- getHighlyCorrelated(name = "WPSFD49207", data = data)
-highly_cor_CPIAUCSL <- getHighlyCorrelated(name = "CPIAUCSL", data = data)
-highly_cor_CPIULFSL <- getHighlyCorrelated(name = "CPIULFSL", data = data)
-highly_cor_PCEPI <- getHighlyCorrelated(name = "PCEPI", data = data)
+# getHighlyCorrelated <- function(value_cor=0.8, name, data){
+#   ### Returns the highly correlated variables in the data with the variable "name", based on if the correlation
+#   ### is higher than value_cor or smaller than -(value_cor) (default value is 0.8)
+#   ### 
+#   ### "name" is included in the highly correlated variables, because correlation with itself is 1
+#   
+#   highly_cor <- c()
+#   correlations <- cor(data)
+#   dependent_var_cor <- cbind(correlations[, name])
+#   rownames <- rownames(dependent_var_cor)
+#   for(cor in dependent_var_cor){
+#     if(cor > value_cor || cor < - value_cor) {
+#       row_name <- rownames(dependent_var_cor)[which(dependent_var_cor == cor)]
+#       highly_cor <- c(highly_cor , row_name)
+#     }
+#   }
+#   return (highly_cor)
+# } 
+# 
+# # for each dependent variable, create vector that contains the highly correlated variables
+# highly_cor_RPI <- getHighlyCorrelated(name = "RPI", data = data)
+# highly_cor_INDPRO <- getHighlyCorrelated(name = "INDPRO", data = data)
+# highly_cor_CMRMTSPLx <- getHighlyCorrelated(name = "CMRMTSPLx", data = data)
+# highly_cor_PAYEMS <- getHighlyCorrelated(name = "PAYEMS", data = data)
+# highly_cor_WPSFD49207 <- getHighlyCorrelated(name = "WPSFD49207", data = data)
+# highly_cor_CPIAUCSL <- getHighlyCorrelated(name = "CPIAUCSL", data = data)
+# highly_cor_CPIULFSL <- getHighlyCorrelated(name = "CPIULFSL", data = data)
+# highly_cor_PCEPI <- getHighlyCorrelated(name = "PCEPI", data = data)
 
 
 # for each dependent variable, create a data set containing the corresponding explanatory variables
-expl_vars_RPI <- data[,!names(data) %in% highly_cor_RPI]
-expl_vars_INDPRO <- data[,!names(data) %in% highly_cor_INDPRO]
-expl_vars_CMRMTSPLx <- data[,!names(data) %in% highly_cor_CMRMTSPLx]
-expl_vars_PAYEMS <- data[,!names(data) %in% highly_cor_PAYEMS]
-expl_vars_WPSFD49207 <- data[,!names(data) %in% highly_cor_WPSFD49207]
-expl_vars_CPIAUCSL <- data[,!names(data) %in% highly_cor_CPIAUCSL]
-expl_vars_CPIULFSL <- data[,!names(data) %in% highly_cor_CPIULFSL]
-expl_vars_PCEPI <- data[,!names(data) %in% highly_cor_PCEPI]
+expl_vars_RPI <- data[,!names(data) %in% c("RPI")]
+expl_vars_INDPRO <- data[,!names(data) %in% c("INDPRO")]
+expl_vars_CMRMTSPLx <- data[,!names(data) %in% c("CMRMTSPLx")]
+expl_vars_PAYEMS <- data[,!names(data) %in% c("PAYEMS")]
+expl_vars_WPSFD49207 <- data[,!names(data) %in% c("WPSFD49207")]
+expl_vars_CPIAUCSL <- data[,!names(data) %in% c("CPIAUCSL")]
+expl_vars_CPIULFSL <- data[,!names(data) %in% c("CPIULFSL")]
+expl_vars_PCEPI <- data[,!names(data) %in% c("PCEPI")]
 
-
-#### PCA ####
-k = 10 # number of factors we want to retrieve using PCA
-
-# get factors out of all explanatory variables
-factors_RPI <- pca_factors(expl_vars_RPI)
-factors_INDPRO <- pca_factors(expl_vars_INDPRO)
-factors_CMRMTSPLx <- pca_factors(expl_vars_CMRMTSPLx)
-factors_PAYEMS <- pca_factors(expl_vars_PAYEMS)
-factors_WPSFD49207 <- pca_factors(expl_vars_WPSFD49207)
-factors_CPIAUCSL <- pca_factors(expl_vars_CPIAUCSL)
-factors_CPIULFSL <- pca_factors(expl_vars_CPIULFSL)
-factors_PCEPI <- pca_factors(expl_vars_PCEPI)
-
-##### Sparse PCA #####
-# for sparse pca we make use of default values: alpha = 1e-04, beta = 1e-04, max_iter = 1000 
-# get factors for sparse PCA
-factors_spca_RPI <- spca_factors(expl_vars_RPI)
-factors_spca_INDPRO <- spca_factors(expl_vars_INDPRO)
-factors_spca_CMRMTSPLx <- spca_factors(expl_vars_CMRMTSPLx)
-factors_spca_PAYEMS <- spca_factors(expl_vars_PAYEMS)
-factors_spca_WPSFD49207 <- spca_factors(expl_vars_WPSFD49207)
-factors_spca_CPIAUCSL <- spca_factors(expl_vars_CPIAUCSL)
-factors_spca_CPIULFSL <- spca_factors(expl_vars_CPIULFSL)
-factors_spca_PCEPI <- spca_factors(expl_vars_PCEPI)
-
-##### LA(PC) #####
-# get factors for LA(PC)
-factors_lapc_RPI <- lapc_factors(x=expl_vars_RPI,y=dependent_var_RPI)
-factors_lapc_INDPRO <- lapc_factors(x=expl_vars_INDPRO,y=dependent_var_INDPRO)
-factors_lapc_CMRMTSPLx <- lapc_factors(x=expl_vars_CMRMTSPLx, y=dependent_var_CMRMTSPLx)
-factors_lapc_PAYEMS <- lapc_factors(x=expl_vars_PAYEMS, y=dependent_var_PAYEMS)
-factors_lapc_WPSFD49207 <- lapc_factors(x=expl_vars_WPSFD49207, y=dependent_var_WPSFD49207)
-factors_lapc_CPIAUCSL <- lapc_factors(x=expl_vars_CPIAUCSL, y=dependent_var_CPIAUCSL)
-factors_lapc_CPIULFSL <- lapc_factors(x=expl_vars_CPIULFSL, y=dependent_var_CPIULFSL)
-factors_lapc_PCEPI <- lapc_factors(x=expl_vars_PCEPI, y=dependent_var_PCEPI)
-
+# #### PCA ####
+# k = 10 # number of factors we want to retrieve using PCA
+# 
+# # get factors out of all explanatory variables
+# factors_RPI <- pca_factors(expl_vars_RPI)
+# factors_INDPRO <- pca_factors(expl_vars_INDPRO)
+# factors_CMRMTSPLx <- pca_factors(expl_vars_CMRMTSPLx)
+# factors_PAYEMS <- pca_factors(expl_vars_PAYEMS)
+# factors_WPSFD49207 <- pca_factors(expl_vars_WPSFD49207)
+# factors_CPIAUCSL <- pca_factors(expl_vars_CPIAUCSL)
+# factors_CPIULFSL <- pca_factors(expl_vars_CPIULFSL)
+# factors_PCEPI <- pca_factors(expl_vars_PCEPI)
+# 
+# ##### Sparse PCA #####
+# # for sparse pca we make use of default values: alpha = 1e-04, beta = 1e-04, max_iter = 1000 
+# # get factors for sparse PCA
+# factors_spca_RPI <- spca_factors(expl_vars_RPI)
+# factors_spca_INDPRO <- spca_factors(expl_vars_INDPRO)
+# factors_spca_CMRMTSPLx <- spca_factors(expl_vars_CMRMTSPLx)
+# factors_spca_PAYEMS <- spca_factors(expl_vars_PAYEMS)
+# factors_spca_WPSFD49207 <- spca_factors(expl_vars_WPSFD49207)
+# factors_spca_CPIAUCSL <- spca_factors(expl_vars_CPIAUCSL)
+# factors_spca_CPIULFSL <- spca_factors(expl_vars_CPIULFSL)
+# factors_spca_PCEPI <- spca_factors(expl_vars_PCEPI)
+# 
+# ##### LA(PC) #####
+# # get factors for LA(PC)
+# factors_lapc_RPI <- lapc_factors(x=expl_vars_RPI,y=dependent_var_RPI)
+# factors_lapc_INDPRO <- lapc_factors(x=expl_vars_INDPRO,y=dependent_var_INDPRO)
+# factors_lapc_CMRMTSPLx <- lapc_factors(x=expl_vars_CMRMTSPLx, y=dependent_var_CMRMTSPLx)
+# factors_lapc_PAYEMS <- lapc_factors(x=expl_vars_PAYEMS, y=dependent_var_PAYEMS)
+# factors_lapc_WPSFD49207 <- lapc_factors(x=expl_vars_WPSFD49207, y=dependent_var_WPSFD49207)
+# factors_lapc_CPIAUCSL <- lapc_factors(x=expl_vars_CPIAUCSL, y=dependent_var_CPIAUCSL)
+# factors_lapc_CPIULFSL <- lapc_factors(x=expl_vars_CPIULFSL, y=dependent_var_CPIULFSL)
+# factors_lapc_PCEPI <- lapc_factors(x=expl_vars_PCEPI, y=dependent_var_PCEPI)
+# 
+# 
 
 #### AR ####
-source("AR_model.R")
-best_lag_RPI <- AR_model(expl_vars_RPI, dependent_var_RPI)
-best_lag_INDPRO <- AR_model(expl_vars_INDPRO, dependent_var_INDPRO)
-best_lag_CMRMTSPLx  <- AR_model(expl_vars_CMRMTSPLx, dependent_var_CMRMTSPLx)
-best_lag_PAYEMS     <- AR_model(expl_vars_PAYEMS, dependent_var_PAYEMS)
-best_lag_WPSFD49207 <- AR_model(expl_vars_WPSFD49207, dependent_var_WPSFD49207)
-best_lag_CPIAUCSL <- AR_model(expl_vars_CPIAUCSL, dependent_var_CPIAUCSL)
-best_lag_CPIULFSL <- AR_model(expl_vars_CPIULFSL, dependent_var_CPIULFSL)
-best_lag_PCEPI <- AR_model(expl_vars_PCEPI, dependent_var_PCEPI)
-
+best_lag_RPI <- 5
+best_lag_INDPRO <- 6
+best_lag_CMRMTSPLx  <- 4
+best_lag_PAYEMS     <- 4
+best_lag_WPSFD49207 <- 6
+best_lag_CPIAUCSL <- 6
+best_lag_CPIULFSL <- 6
+best_lag_PCEPI <- 6
 
 ############################################################ 
 ############### Code used to created outputs ############### 
