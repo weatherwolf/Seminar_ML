@@ -183,7 +183,7 @@ RollingWindowNew = function(dependent_var, explanatory_vars, method, lambda= 1, 
     } else if (method == "Equal Weights") {
       intercept <- 0
       
-      coef <- rep(1/3, 3)
+      coef <- rep(1/4, 4)
       
       y_bar <- yBar(x_test, coef, intercept)
       
@@ -213,8 +213,8 @@ RollingWindowYHat = function(dependent_var, explanatory_vars,
   beginTime <- 1
   endTime <- 120
   
-  yHatMatrix <- matrix(nrow = 0, ncol = 3)
-  colnames(yHatMatrix) <- c("Lasso", "PCA", "AR")
+  yHatMatrix <- matrix(nrow = 0, ncol = 4)
+  colnames(yHatMatrix) <- c("Lasso", "PCA", "AR", "RF")
   y_hat_list <- numeric(3)
   
   while (endTime + 1 <= nrow(explanatory_vars)) {
@@ -245,7 +245,7 @@ RollingWindowYHat = function(dependent_var, explanatory_vars,
     y_testPCA <- y_test
     modelPCA <- stats::lm(y_trainPCA ~ x_trainPCA-1)
     
-    #AR
+    # AR
     y_train_AR <- as.vector(y_train[(nrow(y_train)-lag+1):nrow(y_train), ])
     tryCatch(
       {
@@ -261,12 +261,44 @@ RollingWindowYHat = function(dependent_var, explanatory_vars,
       }
     )
     
+    # Random Forest
+    current_names <- names(as.data.frame(x_train))
+    new_names <- c()
+    for (j in 1:lag) {
+      if(j == 1) {
+        new_names <- cbind(new_names, "lagged_var_one")
+      }
+      if(j == 2) {
+        new_names <- cbind(new_names, "lagged_var_two")
+      }
+      if(j == 3) {
+        new_names <- cbind(new_names, "lagged_var_three")
+      }
+      if(j == 4) {
+        new_names <- cbind(new_names, "lagged_var_four")
+      }
+      if(j == 5) {
+        new_names <- cbind(new_names, "lagged_var_five")
+      }
+      if(j == 6) {
+        new_names <- cbind(new_names, "lagged_var_six")
+      }
+    }
+    index <- length(current_names) - lag + 1
+    current_names[index:length(current_names)] <- new_names
+    x_trainRF <- as.data.frame(x_train)
+    x_testRF <- as.data.frame(x_test)
+    names(x_trainRF) <- current_names
+    names(x_testRF) <- current_names
+    modelRF <- randomForest(as.matrix(y_train) ~., as.matrix(x_trainRF), importance = TRUE)
     
     # Make a list of all the different y_hats over all the methods we have made
     y_hat_list[1] <- yBar(x_test, coef(modelLasso)[-1], coef(modelLasso)[1])
     y_hat_list[2] <- yBar(x_testPCA, coef(modelPCA), 0)
     y_hat_list[3] <- yBar(y_train_AR, coef(modelAR), 0)
+    y_hat_list[4] <- predict(object=modelRF, newdata=x_testRF)
     beginTime <- beginTime + 1
+    print(endTime)
     endTime <- endTime + 1
 
     yHatMatrix <- rbind(yHatMatrix, y_hat_list)
