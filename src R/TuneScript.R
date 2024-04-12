@@ -177,7 +177,21 @@ print(paste("[", sqrt(sum(error_AR)/640), sqrt(sum(error_Lasso)/640), sqrt(sum(e
                  sqrt(sum(error_RF)/640), sqrt(sum(error_Forecast_Combination_EQW)/520), sqrt(sum(error_Forecast_Combination_OLS)/520), sqrt(sum(error_Forecast_Combination_Lasso)/520), 
                  sqrt(sum(error_Forecast_Combination_Ridge)/520), sqrt(sum(error_Forecast_Combination_RF)/520), "]"))
 
-
+print(paste("[", 
+            "Lasso:", Diebold_Lasso$p.value, 
+            "Ridge:", Diebold_Ridge$p.value, 
+            "ElasticNet:", Diebold_ElasticNet$p.value, 
+            "AdaptiveLasso:", Diebold_AdaptiveLasso$p.value,
+            "PCA:", Diebold_PCA$p.value, 
+            "SPCA:", Diebold_SPCA$p.value, 
+            "LAPC:", Diebold_LAPC$p.value, 
+            "RF:", Diebold_RF$p.value, 
+            "FC_EQW:", Diebold_FC_EQW$p.value, 
+            "FC_OLS:", Diebold_FC_OLS$p.value, 
+            "FC_Lasso:", Diebold_FC_Lasso$p.value, 
+            "FC_Ridge:", Diebold_FC_Ridge$p.value, 
+            "FC_RF:", Diebold_FC_RF$p.value,
+            "]"))
 
 ##################################################################
 #                                                                #
@@ -216,6 +230,38 @@ print(paste("[", sqrt(sum(error_AR)/640), sqrt(sum(error_Lasso)/640), sqrt(sum(e
             sqrt(sum(error_AdaptiveLasso)/640), sqrt(sum(error_PCA)/640), sqrt(sum(error_SPCA)/640), sqrt(sum(error_LAPC)/640),
             sqrt(sum(error_RF)/640), sqrt(sum(error_Forecast_Combination_EQW)/520), sqrt(sum(error_Forecast_Combination_OLS)/520), sqrt(sum(error_Forecast_Combination_Lasso)/520), 
             sqrt(sum(error_Forecast_Combination_Ridge)/520), sqrt(sum(error_Forecast_Combination_RF)/520), "]"))
+
+
+
+Diebold_Lasso <- dm.test(error_Lasso, error_AR, h=1)
+Diebold_Ridge <- dm.test(error_Ridge, error_AR, h=1)
+Diebold_ElasticNet <- dm.test(error_ElasticNet, error_AR, h=1)
+Diebold_AdaptiveLasso <- dm.test(error_AdaptiveLasso, error_AR, h=1)
+Diebold_PCA <- dm.test(error_PCA, error_AR, h=1)
+Diebold_SPCA <- dm.test(error_SPCA, error_AR, h=1)
+Diebold_LAPC <- dm.test(error_LAPC, error_AR, h=1)
+Diebold_RF <- dm.test(error_RF, error_AR, h=1)
+Diebold_FC_EQW <- dm.test(error_Forecast_Combination_EQW, error_AR, h=1)
+Diebold_FC_OLS <- dm.test(error_Forecast_Combination_OLS, error_AR, h=1)
+Diebold_FC_Lasso <- dm.test(error_Forecast_Combination_Lasso, error_AR, h=1)
+Diebold_FC_Ridge <- dm.test(error_Forecast_Combination_Ridge, error_AR, h=1)
+Diebold_FC_RF <- dm.test(error_Forecast_Combination_RF, error_AR, h=1)
+
+print(paste("[", 
+            "Lasso:", Diebold_Lasso$p.value, 
+            "Ridge:", Diebold_Ridge$p.value, 
+            "ElasticNet:", Diebold_ElasticNet$p.value, 
+            "AdaptiveLasso:", Diebold_AdaptiveLasso$p.value,
+            "PCA:", Diebold_PCA$p.value, 
+            "SPCA:", Diebold_SPCA$p.value, 
+            "LAPC:", Diebold_LAPC$p.value, 
+            "RF:", Diebold_RF$p.value, 
+            "FC_EQW:", Diebold_FC_EQW$p.value, 
+            "FC_OLS:", Diebold_FC_OLS$p.value, 
+            "FC_Lasso:", Diebold_FC_Lasso$p.value, 
+            "FC_Ridge:", Diebold_FC_Ridge$p.value, 
+            "FC_RF:", Diebold_FC_RF$p.value,
+            "]"))
 
 
 #####################################################################
@@ -258,6 +304,36 @@ print(paste("[", sqrt(sum(error_AR)/640), sqrt(sum(error_Lasso)/640), sqrt(sum(e
 
 
 
+Diebold_Lasso <- dm.test(error_Lasso, error_AR, h=1)
+Diebold_Ridge <- dm.test(error_Ridge, error_AR, h=1)
+Diebold_ElasticNet <- dm.test(error_ElasticNet, error_AR, h=1)
+Diebold_AdaptiveLasso <- dm.test(error_AdaptiveLasso, error_AR, h=1)
+Diebold_PCA <- dm.test(error_PCA, error_AR, h=1)
+Diebold_SPCA <- dm.test(error_SPCA, error_AR, h=1)
+Diebold_LAPC <- dm.test(error_LAPC, error_AR, h=1)
+Diebold_RF <- dm.test(error_RF, error_AR, h=1)
+Diebold_FC_EQW <- dm.test(error_Forecast_Combination_EQW, error_AR, h=1)
+Diebold_FC_OLS <- dm.test(error_Forecast_Combination_OLS, error_AR, h=1)
+Diebold_FC_Lasso <- dm.test(error_Forecast_Combination_Lasso, error_AR, h=1)
+Diebold_FC_Ridge <- dm.test(error_Forecast_Combination_Ridge, error_AR, h=1)
+Diebold_FC_RF <- dm.test(error_Forecast_Combination_RF, error_AR, h=1)
+
+print(paste("[", 
+            "Lasso:", Diebold_Lasso$p.value, 
+            "Ridge:", Diebold_Ridge$p.value, 
+            "ElasticNet:", Diebold_ElasticNet$p.value, 
+            "AdaptiveLasso:", Diebold_AdaptiveLasso$p.value,
+            "PCA:", Diebold_PCA$p.value, 
+            "SPCA:", Diebold_SPCA$p.value, 
+            "LAPC:", Diebold_LAPC$p.value, 
+            "RF:", Diebold_RF$p.value, 
+            "FC_EQW:", Diebold_FC_EQW$p.value, 
+            "FC_OLS:", Diebold_FC_OLS$p.value, 
+            "FC_Lasso:", Diebold_FC_Lasso$p.value, 
+            "FC_Ridge:", Diebold_FC_Ridge$p.value, 
+            "FC_RF:", Diebold_FC_RF$p.value,
+            "]"))
+
 ####################################################################
 #                                                                  #
 #               Code used to create CPIAUCSL outputs               # 
@@ -297,6 +373,35 @@ print(paste("[", sqrt(sum(error_AR)/640), sqrt(sum(error_Lasso)/640), sqrt(sum(e
             sqrt(sum(error_Forecast_Combination_Ridge)/520), sqrt(sum(error_Forecast_Combination_RF)/520), "]"))
 
 
+Diebold_Lasso <- dm.test(error_Lasso, error_AR, h=1)
+Diebold_Ridge <- dm.test(error_Ridge, error_AR, h=1)
+Diebold_ElasticNet <- dm.test(error_ElasticNet, error_AR, h=1)
+Diebold_AdaptiveLasso <- dm.test(error_AdaptiveLasso, error_AR, h=1)
+Diebold_PCA <- dm.test(error_PCA, error_AR, h=1)
+Diebold_SPCA <- dm.test(error_SPCA, error_AR, h=1)
+Diebold_LAPC <- dm.test(error_LAPC, error_AR, h=1)
+Diebold_RF <- dm.test(error_RF, error_AR, h=1)
+Diebold_FC_EQW <- dm.test(error_Forecast_Combination_EQW, error_AR, h=1)
+Diebold_FC_OLS <- dm.test(error_Forecast_Combination_OLS, error_AR, h=1)
+Diebold_FC_Lasso <- dm.test(error_Forecast_Combination_Lasso, error_AR, h=1)
+Diebold_FC_Ridge <- dm.test(error_Forecast_Combination_Ridge, error_AR, h=1)
+Diebold_FC_RF <- dm.test(error_Forecast_Combination_RF, error_AR, h=1)
+
+print(paste("[", 
+            "Lasso:", Diebold_Lasso$p.value, 
+            "Ridge:", Diebold_Ridge$p.value, 
+            "ElasticNet:", Diebold_ElasticNet$p.value, 
+            "AdaptiveLasso:", Diebold_AdaptiveLasso$p.value,
+            "PCA:", Diebold_PCA$p.value, 
+            "SPCA:", Diebold_SPCA$p.value, 
+            "LAPC:", Diebold_LAPC$p.value, 
+            "RF:", Diebold_RF$p.value, 
+            "FC_EQW:", Diebold_FC_EQW$p.value, 
+            "FC_OLS:", Diebold_FC_OLS$p.value, 
+            "FC_Lasso:", Diebold_FC_Lasso$p.value, 
+            "FC_Ridge:", Diebold_FC_Ridge$p.value, 
+            "FC_RF:", Diebold_FC_RF$p.value,
+            "]"))
 
 ####################################################################
 #                                                                  #
@@ -337,6 +442,35 @@ print(paste("[", sqrt(sum(error_AR)/640), sqrt(sum(error_Lasso)/640), sqrt(sum(e
             sqrt(sum(error_Forecast_Combination_Ridge)/520), sqrt(sum(error_Forecast_Combination_RF)/520), "]"))
 
 
+Diebold_Lasso <- dm.test(error_Lasso, error_AR, h=1)
+Diebold_Ridge <- dm.test(error_Ridge, error_AR, h=1)
+Diebold_ElasticNet <- dm.test(error_ElasticNet, error_AR, h=1)
+Diebold_AdaptiveLasso <- dm.test(error_AdaptiveLasso, error_AR, h=1)
+Diebold_PCA <- dm.test(error_PCA, error_AR, h=1)
+Diebold_SPCA <- dm.test(error_SPCA, error_AR, h=1)
+Diebold_LAPC <- dm.test(error_LAPC, error_AR, h=1)
+Diebold_RF <- dm.test(error_RF, error_AR, h=1)
+Diebold_FC_EQW <- dm.test(error_Forecast_Combination_EQW, error_AR, h=1)
+Diebold_FC_OLS <- dm.test(error_Forecast_Combination_OLS, error_AR, h=1)
+Diebold_FC_Lasso <- dm.test(error_Forecast_Combination_Lasso, error_AR, h=1)
+Diebold_FC_Ridge <- dm.test(error_Forecast_Combination_Ridge, error_AR, h=1)
+Diebold_FC_RF <- dm.test(error_Forecast_Combination_RF, error_AR, h=1)
+
+print(paste("[", 
+            "Lasso:", Diebold_Lasso$p.value, 
+            "Ridge:", Diebold_Ridge$p.value, 
+            "ElasticNet:", Diebold_ElasticNet$p.value, 
+            "AdaptiveLasso:", Diebold_AdaptiveLasso$p.value,
+            "PCA:", Diebold_PCA$p.value, 
+            "SPCA:", Diebold_SPCA$p.value, 
+            "LAPC:", Diebold_LAPC$p.value, 
+            "RF:", Diebold_RF$p.value, 
+            "FC_EQW:", Diebold_FC_EQW$p.value, 
+            "FC_OLS:", Diebold_FC_OLS$p.value, 
+            "FC_Lasso:", Diebold_FC_Lasso$p.value, 
+            "FC_Ridge:", Diebold_FC_Ridge$p.value, 
+            "FC_RF:", Diebold_FC_RF$p.value,
+            "]"))
 
 ##################################################################
 #                                                                #
@@ -377,6 +511,35 @@ print(paste("[", sqrt(sum(error_AR)/640), sqrt(sum(error_Lasso)/640), sqrt(sum(e
             sqrt(sum(error_Forecast_Combination_Ridge)/520), sqrt(sum(error_Forecast_Combination_RF)/520), "]"))
 
 
+Diebold_Lasso <- dm.test(error_Lasso, error_AR, h=1)
+Diebold_Ridge <- dm.test(error_Ridge, error_AR, h=1)
+Diebold_ElasticNet <- dm.test(error_ElasticNet, error_AR, h=1)
+Diebold_AdaptiveLasso <- dm.test(error_AdaptiveLasso, error_AR, h=1)
+Diebold_PCA <- dm.test(error_PCA, error_AR, h=1)
+Diebold_SPCA <- dm.test(error_SPCA, error_AR, h=1)
+Diebold_LAPC <- dm.test(error_LAPC, error_AR, h=1)
+Diebold_RF <- dm.test(error_RF, error_AR, h=1)
+Diebold_FC_EQW <- dm.test(error_Forecast_Combination_EQW, error_AR, h=1)
+Diebold_FC_OLS <- dm.test(error_Forecast_Combination_OLS, error_AR, h=1)
+Diebold_FC_Lasso <- dm.test(error_Forecast_Combination_Lasso, error_AR, h=1)
+Diebold_FC_Ridge <- dm.test(error_Forecast_Combination_Ridge, error_AR, h=1)
+Diebold_FC_RF <- dm.test(error_Forecast_Combination_RF, error_AR, h=1)
+
+print(paste("[", 
+            "Lasso:", Diebold_Lasso$p.value, 
+            "Ridge:", Diebold_Ridge$p.value, 
+            "ElasticNet:", Diebold_ElasticNet$p.value, 
+            "AdaptiveLasso:", Diebold_AdaptiveLasso$p.value,
+            "PCA:", Diebold_PCA$p.value, 
+            "SPCA:", Diebold_SPCA$p.value, 
+            "LAPC:", Diebold_LAPC$p.value, 
+            "RF:", Diebold_RF$p.value, 
+            "FC_EQW:", Diebold_FC_EQW$p.value, 
+            "FC_OLS:", Diebold_FC_OLS$p.value, 
+            "FC_Lasso:", Diebold_FC_Lasso$p.value, 
+            "FC_Ridge:", Diebold_FC_Ridge$p.value, 
+            "FC_RF:", Diebold_FC_RF$p.value,
+            "]"))
 
 #################################################################
 #                                                               #
@@ -417,6 +580,35 @@ print(paste("[", sqrt(sum(error_AR)/640), sqrt(sum(error_Lasso)/640), sqrt(sum(e
             sqrt(sum(error_Forecast_Combination_Ridge)/520), sqrt(sum(error_Forecast_Combination_RF)/520), "]"))
 
 
+Diebold_Lasso <- dm.test(error_Lasso, error_AR, h=1)
+Diebold_Ridge <- dm.test(error_Ridge, error_AR, h=1)
+Diebold_ElasticNet <- dm.test(error_ElasticNet, error_AR, h=1)
+Diebold_AdaptiveLasso <- dm.test(error_AdaptiveLasso, error_AR, h=1)
+Diebold_PCA <- dm.test(error_PCA, error_AR, h=1)
+Diebold_SPCA <- dm.test(error_SPCA, error_AR, h=1)
+Diebold_LAPC <- dm.test(error_LAPC, error_AR, h=1)
+Diebold_RF <- dm.test(error_RF, error_AR, h=1)
+Diebold_FC_EQW <- dm.test(error_Forecast_Combination_EQW, error_AR, h=1)
+Diebold_FC_OLS <- dm.test(error_Forecast_Combination_OLS, error_AR, h=1)
+Diebold_FC_Lasso <- dm.test(error_Forecast_Combination_Lasso, error_AR, h=1)
+Diebold_FC_Ridge <- dm.test(error_Forecast_Combination_Ridge, error_AR, h=1)
+Diebold_FC_RF <- dm.test(error_Forecast_Combination_RF, error_AR, h=1)
+
+print(paste("[", 
+            "Lasso:", Diebold_Lasso$p.value, 
+            "Ridge:", Diebold_Ridge$p.value, 
+            "ElasticNet:", Diebold_ElasticNet$p.value, 
+            "AdaptiveLasso:", Diebold_AdaptiveLasso$p.value,
+            "PCA:", Diebold_PCA$p.value, 
+            "SPCA:", Diebold_SPCA$p.value, 
+            "LAPC:", Diebold_LAPC$p.value, 
+            "RF:", Diebold_RF$p.value, 
+            "FC_EQW:", Diebold_FC_EQW$p.value, 
+            "FC_OLS:", Diebold_FC_OLS$p.value, 
+            "FC_Lasso:", Diebold_FC_Lasso$p.value, 
+            "FC_Ridge:", Diebold_FC_Ridge$p.value, 
+            "FC_RF:", Diebold_FC_RF$p.value,
+            "]"))
 
 ######################################################################
 #                                                                    #
@@ -457,3 +649,32 @@ print(paste("[", sqrt(sum(error_AR)/640), sqrt(sum(error_Lasso)/640), sqrt(sum(e
             sqrt(sum(error_Forecast_Combination_Ridge)/520), sqrt(sum(error_Forecast_Combination_RF)/520), "]"))
 
 
+Diebold_Lasso <- dm.test(error_Lasso, error_AR, h=1)
+Diebold_Ridge <- dm.test(error_Ridge, error_AR, h=1)
+Diebold_ElasticNet <- dm.test(error_ElasticNet, error_AR, h=1)
+Diebold_AdaptiveLasso <- dm.test(error_AdaptiveLasso, error_AR, h=1)
+Diebold_PCA <- dm.test(error_PCA, error_AR, h=1)
+Diebold_SPCA <- dm.test(error_SPCA, error_AR, h=1)
+Diebold_LAPC <- dm.test(error_LAPC, error_AR, h=1)
+Diebold_RF <- dm.test(error_RF, error_AR, h=1)
+Diebold_FC_EQW <- dm.test(error_Forecast_Combination_EQW, error_AR, h=1)
+Diebold_FC_OLS <- dm.test(error_Forecast_Combination_OLS, error_AR, h=1)
+Diebold_FC_Lasso <- dm.test(error_Forecast_Combination_Lasso, error_AR, h=1)
+Diebold_FC_Ridge <- dm.test(error_Forecast_Combination_Ridge, error_AR, h=1)
+Diebold_FC_RF <- dm.test(error_Forecast_Combination_RF, error_AR, h=1)
+
+print(paste("[", 
+            "Lasso:", Diebold_Lasso$p.value, 
+            "Ridge:", Diebold_Ridge$p.value, 
+            "ElasticNet:", Diebold_ElasticNet$p.value, 
+            "AdaptiveLasso:", Diebold_AdaptiveLasso$p.value,
+            "PCA:", Diebold_PCA$p.value, 
+            "SPCA:", Diebold_SPCA$p.value, 
+            "LAPC:", Diebold_LAPC$p.value, 
+            "RF:", Diebold_RF$p.value, 
+            "FC_EQW:", Diebold_FC_EQW$p.value, 
+            "FC_OLS:", Diebold_FC_OLS$p.value, 
+            "FC_Lasso:", Diebold_FC_Lasso$p.value, 
+            "FC_Ridge:", Diebold_FC_Ridge$p.value, 
+            "FC_RF:", Diebold_FC_RF$p.value,
+            "]"))
