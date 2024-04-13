@@ -27,6 +27,10 @@ RollingWindowNew = function(dependent_var, explanatory_vars, method, lambda= 1, 
   endTime <- 120
   MSE <- vector("numeric", length = 0)
   
+  if (method %in% c("OLS", "RF_forecomb", "Lasso FC", "Ridge FC", "Equal Weights" )) {
+    FC_weights <- data.frame(matrix(nrow = (nrow(explanatory_vars) - endTime), ncol = ncol(explanatory_vars)))
+    colnames(FC_weights) <- colnames(explanatory_vars)
+  }
   
   while (endTime + 1 <= nrow(explanatory_vars)) {
     numberOfWindows <- numberOfWindows + 1
@@ -39,14 +43,17 @@ RollingWindowNew = function(dependent_var, explanatory_vars, method, lambda= 1, 
     x_test <-  as.matrix(totalStats[[3]])
     y_test <- as.matrix(totalStats[[4]])
     
+    
+      
+    
     if (is.null(x_train) || is.null(y_train) || is.null(x_test) || is.null(y_test)) {
       cat("Data not found for given time range.\n")
       break
     }
     
-    if (method == "Lasso") {
+    if (method == "Lasso" || method == "Lasso FC") {
       model <- glmnet(as.matrix(x_train), as.matrix(y_train), alpha = 1, lambda = lambda)
-    } else if (method == "Ridge") {
+    } else if (method == "Ridge" || method == "Ridge FC") {
       model <- glmnet(as.matrix(x_train), as.matrix(y_train), alpha = 0, lambda = lambda)
     } else if (method == "ElasticNet") {
       model <- glmnet(as.matrix(x_train), as.matrix(y_train), alpha = alpha, lambda = lambda)
@@ -130,7 +137,7 @@ RollingWindowNew = function(dependent_var, explanatory_vars, method, lambda= 1, 
     # Update lambda if applicable
     lambda <- model$lambda
     
-    if (method %in% c("Lasso", "Ridge", "ElasticNet", "AdaptiveLasso")) {
+    if (method %in% c("Lasso", "Ridge", "ElasticNet", "AdaptiveLasso", "Lasso FC", "Ridge FC")) {
       
       intercept <- coef(model)[1]
       coef <- coef(model)[-1]
@@ -139,6 +146,10 @@ RollingWindowNew = function(dependent_var, explanatory_vars, method, lambda= 1, 
       
       MSE[length(MSE) + 1] <- (y_test-y_bar)*(y_test-y_bar)
       totalError <- totalError + (y_test-y_bar)*(y_test-y_bar)
+      
+      if (method == "Lasso FC" || method == "Ridge FC") {
+        FC_weights[numberOfWindows, ] <- as.vector(t(coef))
+      }
       
     } else if (method %in% c("PCA", "SPCA", "LAPC", "OLS")){
       
@@ -150,6 +161,10 @@ RollingWindowNew = function(dependent_var, explanatory_vars, method, lambda= 1, 
       
       MSE[length(MSE) + 1] <- (y_test-y_bar)*(y_test-y_bar)
       totalError <- totalError + (y_test-y_bar)*(y_test-y_bar)
+      
+      if (method == "OLS") {
+        FC_weights[numberOfWindows, ] <- as.vector(t(coef))  
+      }
       
     } else if (method %in% c("AR")){
       
@@ -180,6 +195,12 @@ RollingWindowNew = function(dependent_var, explanatory_vars, method, lambda= 1, 
       MSE[length(MSE) + 1] <- (y_test-y_bar)*(y_test-y_bar)
       totalError <- totalError + (y_test-y_bar)*(y_test-y_bar)
       
+      coef <- importance(model, type = 1, scale = TRUE) # use MDA
+      
+      if (method == "RF_forecomb") {
+        FC_weights[numberOfWindows, ] <- as.vector(t(coef))  
+      }
+      
     } else if (method == "Equal Weights") {
       intercept <- 0
       
@@ -189,7 +210,9 @@ RollingWindowNew = function(dependent_var, explanatory_vars, method, lambda= 1, 
       
       MSE[length(MSE) + 1] <- (y_test-y_bar)*(y_test-y_bar)
       totalError <- totalError + (y_test-y_bar)*(y_test-y_bar)
-      
+      if (method == "Equal Weights") {
+        FC_weights[numberOfWindows, ] <- as.vector(t(coef))  
+      }
     } else {
       
     }
@@ -199,11 +222,9 @@ RollingWindowNew = function(dependent_var, explanatory_vars, method, lambda= 1, 
     endTime <- endTime + 1
   }
   print(sqrt(totalError/numberOfWindows))
-  return(unlist(MSE))
+  return(list("MSE"= unlist(MSE), "Weights" = FC_weights))
 }
 
-
-source("ForecastCombinations.R")
 
 
 RollingWindowYHat = function(dependent_var, explanatory_vars, 

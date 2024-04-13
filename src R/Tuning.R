@@ -3,7 +3,7 @@ library(stats)
 
 source("Forecast.R")
 
-TuningRollingWindowTuningPenalized = function(dependent_var, explanatory_vars, method, lambdaList, alphaList, lag) {
+TuningRollingWindowTuningPenalized <- function(dependent_var, explanatory_vars, method, lambdaList, alphaList, lag) {
   totalError <- 0
   numberOfWindows <- 0
   
@@ -105,8 +105,127 @@ BICglm <- function(fit) {
   return(BIC)
 }
 
+TuningRollingWindowForecastCombinations <- function(dependent_var, explanatory_vars, method, lambdaList = NULL) {
+  totalError <- 0
+  numberOfWindows <- 0
+  
+  beginTime <- 1
+  endTime <- 120
+  
+  lambdaOptList <- vector("numeric", length = 0)
+  MSEOptList <- vector("numeric", length = 0)
+  YBarOptList <- vector("numeric", length = 0)
+  FC_weights <- data.frame(matrix(nrow = (nrow(explanatory_vars) - endTime), ncol = ncol(explanatory_vars)))
+  colnames(FC_weights) <- colnames(explanatory_vars)
+  
+  while (endTime + 1 <= nrow(explanatory_vars)) {
+    numberOfWindows <- numberOfWindows + 1
+    
+    totalStats <- CreateDataSetNew(dependent_var, explanatory_vars, beginTime = beginTime, endTime = endTime, numlags = 0)
+    
+    x_train <- as.matrix(totalStats[[1]])
+    y_train <- as.matrix(totalStats[[2]])
+    x_test <-  as.matrix(totalStats[[3]])
+    y_test <- as.matrix(totalStats[[4]])
+    
+    if (is.null(x_train) || is.null(y_train) || is.null(x_test) || is.null(y_test)) {
+      cat("Data not found for given time range.\n")
+      break
+    }
+    
+    if (method %in% c("Lasso FC", "Ridge FC")) {
+      minError <- 12000 * 12000
+      lambdaOpt <- 0
+      MSEOpt <- 0
+      minBIC <- 12000 * 12000
+      yBarOpt <- 0
+      coefOpt <- c()
+      
+      for(lambda in lambdaList) {
+          totalErrorLoop <- 0
+          
+          if (method == "Lasso FC") {
+            model <- glmnet(x_train, y_train, alpha = 1, lambda = lambda)
+          } else if (method == "Ridge FC") {
+            model <- glmnet(x_train, y_train, alpha = 0, lambda = lambda)
+          } else {
+            stop("Invalid model name provided. Try Lasso, Ridge, ElasticNet, PCA, SPCA, AR, or AdaptiveLasso")
+          }
+          
+          # Update lambda or alpha if applicable
+          intercept <- coef(model)[1]
+          coef <- coef(model)[-1]
+          
+          y_bar <- yBar(x_test, coef, intercept)
+          
+          totalErrorLoop <- totalErrorLoop + (y_test-y_bar)*(y_test-y_bar)
+          
+          if (BICglm(model) < minBIC) {
+            minBIC <- BICglm(model)
+            minError <- totalErrorLoop
+            #print(paste(lambda, minBIC))
+            lambdaOpt <- lambda
+            yBarOpt <- y_bar
+            coefOpt <- coef
+          } 
+        
+        
+      }
+      
+      MSEOptList[length(MSEOptList) + 1] <- minError
+      lambdaOptList[length(lambdaOptList) + 1] <- lambdaOpt
+      YBarOptList[length(YBarOptList) + 1] <- yBarOpt
+      FC_weights[numberOfWindows, ] <- as.vector(t(coefOpt))
+      
+      totalError <- totalError + minError
+    } else if (method == "Equal Weights") {
+      intercept <- 0
+      
+      coef <- rep(1/4, 4)
+      
+      y_bar <- yBar(x_test, coef, intercept)
+      
+      MSEOptList[length(MSEOptList) + 1] <- (y_test-y_bar)*(y_test-y_bar)
+      totalError <- totalError + (y_test-y_bar)*(y_test-y_bar)
+      FC_weights[numberOfWindows, ] <- as.vector(t(coef))  
+    } else if (method == "RF_forecomb") {
+      rf_model <- randomForest(as.matrix(y_train) ~., as.matrix(x_train), importance = TRUE)
+      y_bar <- predict(object=rf_model, newdata=t(x_test))
+      #y_bar <- predict(object=rf_model, newdata=x_test)
+      
+      MSEOptList[length(MSEOptList) + 1] <- (y_test-y_bar)*(y_test-y_bar)
+      totalError <- totalError + (y_test-y_bar)*(y_test-y_bar)
+      
+      coef <- importance(rf_model, type = 1, scale = TRUE) # use MDA
+     
+      FC_weights[numberOfWindows, ] <- as.vector(t(coef))  
+      
+    } else if (method == "OLS") {
+      model <- stats::lm(y_train ~ x_train-1)
+      intercept <- 0
+      coef <- as.data.frame(model$coefficients)
+      
+      y_bar <- yBar(x_test, coef, intercept)
+      
+      MSEOptList[length(MSEOptList) + 1] <- (y_test-y_bar)*(y_test-y_bar)
+      totalError <- totalError + (y_test-y_bar)*(y_test-y_bar)
+      FC_weights[numberOfWindows, ] <- as.vector(t(coef)) 
+    } else {
+      stop("Invalid model name provided.")
+    }
+    
+    
+    
+    #print(paste(beginTime, endTime))
+    
+    beginTime <- beginTime + 1
+    endTime <- endTime + 1
+  }
+  print(sqrt(totalError/numberOfWindows))
+  return(list(MSEOptList, lambdaOptList, YBarOptList, "Weights" = FC_weights))
+}
 
-TuningRollingWindowFactorModels = function(dependent_var, explanatory_vars, method, kList, lag, alphaList=1) {
+TuningRollingWindowFactorModels <- function(dependent_var, explanatory_vars, method, kList, lag, alphaList=1) {
   totalError <- 0
   numberOfWindows <- 0
   

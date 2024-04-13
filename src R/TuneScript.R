@@ -12,7 +12,10 @@ library(randomForest)
 library(sparsepca)
 library(lars)
 library(ForecastComb)
-
+if(!require(scales)){
+  install.packages("scales", dependencies=TRUE)
+  library(scales)
+}
 
 # # Load custom functions from R scripts
 source("Dataprocessor.R")
@@ -128,6 +131,10 @@ lapc <- "LAPC"
 ar <- "AR"
 EqualWeights <- "Equal Weights"
 RF <- "Random Forest"
+ols <- "OLS"
+RF_forecomb <- "RF_forecomb"
+lasso_forecomb <- "Lasso FC"
+ridge_forecomb <- "Ridge FC"
 
 source("Dataprocessor.R")
 source("Forecast.R")
@@ -166,11 +173,11 @@ dependent_var = as.data.frame(dependent_var_RPI)
 dependent_var <- as.data.frame(dependent_var[121:(nrow(dependent_var)), ])
 yhatMatrix <- cbind(error_Lasso[[4]], error_PCA[[4]], error_AR[[2]], error_RF[[2]])
 
-error_Forecast_Combination_Lasso <- RollingWindowNew(dependent_var, yhatMatrix, method=lasso, lag=0)
-error_Forecast_Combination_Ridge <- RollingWindowNew(dependent_var, yhatMatrix, method=ridge, lag=0)
-error_Forecast_Combination_OLS <- RollingWindowNew(dependent_var, yhatMatrix, method=pca, lag=0)
-error_Forecast_Combination_EQW <- RollingWindowNew(dependent_var, yhatMatrix, method=EqualWeights, lag=0)
-error_Forecast_Combination_RF <- RollingWindowNew(dependent_var, yhatMatrix, method=RF, lag=0)
+error_Forecast_Combination_Lasso <- TuningRollingWindowForecastCombinations(dependent_var, yhatMatrix, method=lasso_forecomb, lambdaList = lambdaList)
+error_Forecast_Combination_Ridge <- TuningRollingWindowForecastCombinations(dependent_var, yhatMatrix, method=ridge_forecomb, lambdaList = lambdaList)
+error_Forecast_Combination_OLS <- TuningRollingWindowForecastCombinations(dependent_var, yhatMatrix, method=ols)
+error_Forecast_Combination_EQW <- TuningRollingWindowForecastCombinations(dependent_var, yhatMatrix, method=EqualWeights)
+error_Forecast_Combination_RF <- TuningRollingWindowForecastCombinations(dependent_var, yhatMatrix, method=RF_forecomb)
 
 print(paste("[", sqrt(sum(error_AR)/640), sqrt(sum(error_Lasso)/640), sqrt(sum(error_Ridge)/640), sqrt(sum(error_ElasticNet)/640), 
                  sqrt(sum(error_AdaptiveLasso)/640), sqrt(sum(error_PCA)/640), sqrt(sum(error_SPCA)/640), sqrt(sum(error_LAPC)/640),
@@ -220,11 +227,11 @@ dependent_var = as.data.frame(dependent_var_RPI)
 dependent_var <- as.data.frame(dependent_var[121:(nrow(dependent_var)), ])
 yhatMatrix <- cbind(error_Lasso[[4]], error_PCA[[4]], error_AR[[2]], error_RF[[2]])
 
-error_Forecast_Combination_Lasso <- RollingWindowNew(dependent_var, yhatMatrix, method=lasso, lag=0)
-error_Forecast_Combination_Ridge <- RollingWindowNew(dependent_var, yhatMatrix, method=ridge, lag=0)
-error_Forecast_Combination_OLS <- RollingWindowNew(dependent_var, yhatMatrix, method=pca, lag=0)
-error_Forecast_Combination_EQW <- RollingWindowNew(dependent_var, yhatMatrix, method=EqualWeights, lag=0)
-error_Forecast_Combination_RF <- RollingWindowNew(dependent_var, yhatMatrix, method=RF, lag=0)
+error_Forecast_Combination_Lasso <- TuningRollingWindowForecastCombinations(dependent_var, yhatMatrix, method=lasso_forecomb, lambdaList = lambdaList)
+error_Forecast_Combination_Ridge <- TuningRollingWindowForecastCombinations(dependent_var, yhatMatrix, method=ridge_forecomb, lambdaList = lambdaList)
+error_Forecast_Combination_OLS <- TuningRollingWindowForecastCombinations(dependent_var, yhatMatrix, method=ols)
+error_Forecast_Combination_EQW <- TuningRollingWindowForecastCombinations(dependent_var, yhatMatrix, method=EqualWeights)
+error_Forecast_Combination_RF <- TuningRollingWindowForecastCombinations(dependent_var, yhatMatrix, method=RF_forecomb)
 
 print(paste("[", sqrt(sum(error_AR)/640), sqrt(sum(error_Lasso)/640), sqrt(sum(error_Ridge)/640), sqrt(sum(error_ElasticNet)/640), 
             sqrt(sum(error_AdaptiveLasso)/640), sqrt(sum(error_PCA)/640), sqrt(sum(error_SPCA)/640), sqrt(sum(error_LAPC)/640),
@@ -291,11 +298,11 @@ dependent_var = as.data.frame(dependent_var_RPI)
 dependent_var <- as.data.frame(dependent_var[121:(nrow(dependent_var)), ])
 yhatMatrix <- cbind(error_Lasso[[4]], error_PCA[[4]], error_AR[[2]], error_RF[[2]])
 
-error_Forecast_Combination_Lasso <- RollingWindowNew(dependent_var, yhatMatrix, method=lasso, lag=0)
-error_Forecast_Combination_Ridge <- RollingWindowNew(dependent_var, yhatMatrix, method=ridge, lag=0)
-error_Forecast_Combination_OLS <- RollingWindowNew(dependent_var, yhatMatrix, method=pca, lag=0)
-error_Forecast_Combination_EQW <- RollingWindowNew(dependent_var, yhatMatrix, method=EqualWeights, lag=0)
-error_Forecast_Combination_RF <- RollingWindowNew(dependent_var, yhatMatrix, method=RF, lag=0)
+error_Forecast_Combination_Lasso <- TuningRollingWindowForecastCombinations(dependent_var, yhatMatrix, method=lasso_forecomb, lambdaList = lambdaList)
+error_Forecast_Combination_Ridge <- TuningRollingWindowForecastCombinations(dependent_var, yhatMatrix, method=ridge_forecomb, lambdaList = lambdaList)
+error_Forecast_Combination_OLS <- TuningRollingWindowForecastCombinations(dependent_var, yhatMatrix, method=ols)
+error_Forecast_Combination_EQW <- TuningRollingWindowForecastCombinations(dependent_var, yhatMatrix, method=EqualWeights)
+error_Forecast_Combination_RF <- TuningRollingWindowForecastCombinations(dependent_var, yhatMatrix, method=RF_forecomb)
 
 print(paste("[", sqrt(sum(error_AR)/640), sqrt(sum(error_Lasso)/640), sqrt(sum(error_Ridge)/640), sqrt(sum(error_ElasticNet)/640), 
             sqrt(sum(error_AdaptiveLasso)/640), sqrt(sum(error_PCA)/640), sqrt(sum(error_SPCA)/640), sqrt(sum(error_LAPC)/640),
@@ -361,11 +368,11 @@ dependent_var = as.data.frame(dependent_var_RPI)
 dependent_var <- as.data.frame(dependent_var[121:(nrow(dependent_var)), ])
 yhatMatrix <- cbind(error_Lasso[[4]], error_PCA[[4]], error_AR[[2]], error_RF[[2]])
 
-error_Forecast_Combination_Lasso <- RollingWindowNew(dependent_var, yhatMatrix, method=lasso, lag=0)
-error_Forecast_Combination_Ridge <- RollingWindowNew(dependent_var, yhatMatrix, method=ridge, lag=0)
-error_Forecast_Combination_OLS <- RollingWindowNew(dependent_var, yhatMatrix, method=pca, lag=0)
-error_Forecast_Combination_EQW <- RollingWindowNew(dependent_var, yhatMatrix, method=EqualWeights, lag=0)
-error_Forecast_Combination_RF <- RollingWindowNew(dependent_var, yhatMatrix, method=RF, lag=0)
+error_Forecast_Combination_Lasso <- TuningRollingWindowForecastCombinations(dependent_var, yhatMatrix, method=lasso_forecomb, lambdaList = lambdaList)
+error_Forecast_Combination_Ridge <- TuningRollingWindowForecastCombinations(dependent_var, yhatMatrix, method=ridge_forecomb, lambdaList = lambdaList)
+error_Forecast_Combination_OLS <- TuningRollingWindowForecastCombinations(dependent_var, yhatMatrix, method=ols)
+error_Forecast_Combination_EQW <- TuningRollingWindowForecastCombinations(dependent_var, yhatMatrix, method=EqualWeights)
+error_Forecast_Combination_RF <- TuningRollingWindowForecastCombinations(dependent_var, yhatMatrix, method=RF_forecomb)
 
 print(paste("[", sqrt(sum(error_AR)/640), sqrt(sum(error_Lasso)/640), sqrt(sum(error_Ridge)/640), sqrt(sum(error_ElasticNet)/640), 
             sqrt(sum(error_AdaptiveLasso)/640), sqrt(sum(error_PCA)/640), sqrt(sum(error_SPCA)/640), sqrt(sum(error_LAPC)/640),
@@ -430,11 +437,11 @@ dependent_var = as.data.frame(dependent_var_RPI)
 dependent_var <- as.data.frame(dependent_var[121:(nrow(dependent_var)), ])
 yhatMatrix <- cbind(error_Lasso[[4]], error_PCA[[4]], error_AR[[2]], error_RF[[2]])
 
-error_Forecast_Combination_Lasso <- RollingWindowNew(dependent_var, yhatMatrix, method=lasso, lag=0)
-error_Forecast_Combination_Ridge <- RollingWindowNew(dependent_var, yhatMatrix, method=ridge, lag=0)
-error_Forecast_Combination_OLS <- RollingWindowNew(dependent_var, yhatMatrix, method=pca, lag=0)
-error_Forecast_Combination_EQW <- RollingWindowNew(dependent_var, yhatMatrix, method=EqualWeights, lag=0)
-error_Forecast_Combination_RF <- RollingWindowNew(dependent_var, yhatMatrix, method=RF, lag=0)
+error_Forecast_Combination_Lasso <- TuningRollingWindowForecastCombinations(dependent_var, yhatMatrix, method=lasso_forecomb, lambdaList = lambdaList)
+error_Forecast_Combination_Ridge <- TuningRollingWindowForecastCombinations(dependent_var, yhatMatrix, method=ridge_forecomb, lambdaList = lambdaList)
+error_Forecast_Combination_OLS <- TuningRollingWindowForecastCombinations(dependent_var, yhatMatrix, method=ols)
+error_Forecast_Combination_EQW <- TuningRollingWindowForecastCombinations(dependent_var, yhatMatrix, method=EqualWeights)
+error_Forecast_Combination_RF <- TuningRollingWindowForecastCombinations(dependent_var, yhatMatrix, method=RF_forecomb)
 
 print(paste("[", sqrt(sum(error_AR)/640), sqrt(sum(error_Lasso)/640), sqrt(sum(error_Ridge)/640), sqrt(sum(error_ElasticNet)/640), 
             sqrt(sum(error_AdaptiveLasso)/640), sqrt(sum(error_PCA)/640), sqrt(sum(error_SPCA)/640), sqrt(sum(error_LAPC)/640),
@@ -499,11 +506,11 @@ dependent_var = as.data.frame(dependent_var_RPI)
 dependent_var <- as.data.frame(dependent_var[121:(nrow(dependent_var)), ])
 yhatMatrix <- cbind(error_Lasso[[4]], error_PCA[[4]], error_AR[[2]], error_RF[[2]])
 
-error_Forecast_Combination_Lasso <- RollingWindowNew(dependent_var, yhatMatrix, method=lasso, lag=0)
-error_Forecast_Combination_Ridge <- RollingWindowNew(dependent_var, yhatMatrix, method=ridge, lag=0)
-error_Forecast_Combination_OLS <- RollingWindowNew(dependent_var, yhatMatrix, method=pca, lag=0)
-error_Forecast_Combination_EQW <- RollingWindowNew(dependent_var, yhatMatrix, method=EqualWeights, lag=0)
-error_Forecast_Combination_RF <- RollingWindowNew(dependent_var, yhatMatrix, method=RF, lag=0)
+error_Forecast_Combination_Lasso <- TuningRollingWindowForecastCombinations(dependent_var, yhatMatrix, method=lasso_forecomb, lambdaList = lambdaList)
+error_Forecast_Combination_Ridge <- TuningRollingWindowForecastCombinations(dependent_var, yhatMatrix, method=ridge_forecomb, lambdaList = lambdaList)
+error_Forecast_Combination_OLS <- TuningRollingWindowForecastCombinations(dependent_var, yhatMatrix, method=ols)
+error_Forecast_Combination_EQW <- TuningRollingWindowForecastCombinations(dependent_var, yhatMatrix, method=EqualWeights)
+error_Forecast_Combination_RF <- TuningRollingWindowForecastCombinations(dependent_var, yhatMatrix, method=RF_forecomb)
 
 print(paste("[", sqrt(sum(error_AR)/640), sqrt(sum(error_Lasso)/640), sqrt(sum(error_Ridge)/640), sqrt(sum(error_ElasticNet)/640), 
             sqrt(sum(error_AdaptiveLasso)/640), sqrt(sum(error_PCA)/640), sqrt(sum(error_SPCA)/640), sqrt(sum(error_LAPC)/640),
@@ -568,11 +575,11 @@ dependent_var = as.data.frame(dependent_var_RPI)
 dependent_var <- as.data.frame(dependent_var[121:(nrow(dependent_var)), ])
 yhatMatrix <- cbind(error_Lasso[[4]], error_PCA[[4]], error_AR[[2]], error_RF[[2]])
 
-error_Forecast_Combination_Lasso <- RollingWindowNew(dependent_var, yhatMatrix, method=lasso, lag=0)
-error_Forecast_Combination_Ridge <- RollingWindowNew(dependent_var, yhatMatrix, method=ridge, lag=0)
-error_Forecast_Combination_OLS <- RollingWindowNew(dependent_var, yhatMatrix, method=pca, lag=0)
-error_Forecast_Combination_EQW <- RollingWindowNew(dependent_var, yhatMatrix, method=EqualWeights, lag=0)
-error_Forecast_Combination_RF <- RollingWindowNew(dependent_var, yhatMatrix, method=RF, lag=0)
+error_Forecast_Combination_Lasso <- TuningRollingWindowForecastCombinations(dependent_var, yhatMatrix, method=lasso_forecomb, lambdaList = lambdaList)
+error_Forecast_Combination_Ridge <- TuningRollingWindowForecastCombinations(dependent_var, yhatMatrix, method=ridge_forecomb, lambdaList = lambdaList)
+error_Forecast_Combination_OLS <- TuningRollingWindowForecastCombinations(dependent_var, yhatMatrix, method=ols)
+error_Forecast_Combination_EQW <- TuningRollingWindowForecastCombinations(dependent_var, yhatMatrix, method=EqualWeights)
+error_Forecast_Combination_RF <- TuningRollingWindowForecastCombinations(dependent_var, yhatMatrix, method=RF_forecomb)
 
 print(paste("[", sqrt(sum(error_AR)/640), sqrt(sum(error_Lasso)/640), sqrt(sum(error_Ridge)/640), sqrt(sum(error_ElasticNet)/640), 
             sqrt(sum(error_AdaptiveLasso)/640), sqrt(sum(error_PCA)/640), sqrt(sum(error_SPCA)/640), sqrt(sum(error_LAPC)/640),
@@ -637,11 +644,11 @@ dependent_var = as.data.frame(dependent_var_RPI)
 dependent_var <- as.data.frame(dependent_var[121:(nrow(dependent_var)), ])
 yhatMatrix <- cbind(error_Lasso[[4]], error_PCA[[4]], error_AR[[2]], error_RF[[2]])
 
-error_Forecast_Combination_Lasso <- RollingWindowNew(dependent_var, yhatMatrix, method=lasso, lag=0)
-error_Forecast_Combination_Ridge <- RollingWindowNew(dependent_var, yhatMatrix, method=ridge, lag=0)
-error_Forecast_Combination_OLS <- RollingWindowNew(dependent_var, yhatMatrix, method=pca, lag=0)
-error_Forecast_Combination_EQW <- RollingWindowNew(dependent_var, yhatMatrix, method=EqualWeights, lag=0)
-error_Forecast_Combination_RF <- RollingWindowNew(dependent_var, yhatMatrix, method=RF, lag=0)
+error_Forecast_Combination_Lasso <- TuningRollingWindowForecastCombinations(dependent_var, yhatMatrix, method=lasso_forecomb, lambdaList = lambdaList)
+error_Forecast_Combination_Ridge <- TuningRollingWindowForecastCombinations(dependent_var, yhatMatrix, method=ridge_forecomb, lambdaList = lambdaList)
+error_Forecast_Combination_OLS <- TuningRollingWindowForecastCombinations(dependent_var, yhatMatrix, method=ols)
+error_Forecast_Combination_EQW <- TuningRollingWindowForecastCombinations(dependent_var, yhatMatrix, method=EqualWeights)
+error_Forecast_Combination_RF <- TuningRollingWindowForecastCombinations(dependent_var, yhatMatrix, method=RF_forecomb)
 
 print(paste("[", sqrt(sum(error_AR)/640), sqrt(sum(error_Lasso)/640), sqrt(sum(error_Ridge)/640), sqrt(sum(error_ElasticNet)/640), 
             sqrt(sum(error_AdaptiveLasso)/640), sqrt(sum(error_PCA)/640), sqrt(sum(error_SPCA)/640), sqrt(sum(error_LAPC)/640),

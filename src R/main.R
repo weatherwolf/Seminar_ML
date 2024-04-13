@@ -1,50 +1,54 @@
-if (!require("stats")) {
-  install.packages("stats")
-}
-if (!require("data.table")) {
-  install.packages("data.table")
-}
-if (!require("glmnet")) {
-  install.packages("glmnet")
-}
-if (!require("R6")) {
-  install.packages("R6")
-}
-if (!require("stats")) {
-  install.packages("stats")
-}
-if (!require("data.table")) {
-  install.packages("data.table")
-}
-if (!require("forecast")) {
-  install.packages("forecast")
-}
-if (!require("BreakPoints")) {
-  install.packages("BreakPoints")
-}
-if (!require("strucchange")) {
-  install.packages("strucchange")
-}
-if (!require("changepoint")) {
-  install.packages("changepoint")
-}
-if (!require("dm")) {
-  install.packages("dm")
-}
-if (!require("tseries")) {
-  install.packages("tseries")
-}
-if (!require("randomForest")) {
-  install.packages("randomForest")
-}
-if (!require("sparsepca")) {
-  install.packages("sparsepca")
-}
-if (!require("lars")) {
-  install.packages("lars")
-}
-if (!require("ForecastComb")) {
-  install.packages("ForecastComb")
+# if (!require("stats")) {
+#   install.packages("stats")
+# }
+# if (!require("data.table")) {
+#   install.packages("data.table")
+# }
+# if (!require("glmnet")) {
+#   install.packages("glmnet")
+# }
+# if (!require("R6")) {
+#   install.packages("R6")
+# }
+# if (!require("stats")) {
+#   install.packages("stats")
+# }
+# if (!require("data.table")) {
+#   install.packages("data.table")
+# }
+# if (!require("forecast")) {
+#   install.packages("forecast")
+# }
+# if (!require("BreakPoints")) {
+#   install.packages("BreakPoints")
+# }
+# if (!require("strucchange")) {
+#   install.packages("strucchange")
+# }
+# if (!require("changepoint")) {
+#   install.packages("changepoint")
+# }
+# if (!require("dm")) {
+#   install.packages("dm")
+# }
+# if (!require("tseries")) {
+#   install.packages("tseries")
+# }
+# if (!require("randomForest")) {
+#   install.packages("randomForest")
+# }
+# if (!require("sparsepca")) {
+#   install.packages("sparsepca")
+# }
+# if (!require("lars")) {
+#   install.packages("lars")
+# }
+# if (!require("ForecastComb")) {
+#   install.packages("ForecastComb")
+# }
+if(!require(scales)){
+  install.packages("scales", dependencies=TRUE)
+  library(scales)
 }
 
 
@@ -66,12 +70,10 @@ library(ForecastComb)
 # # Load custom functions from R scripts
 source("Dataprocessor.R")
 source("Forecast.R")
-source("Model.R")
 source("Tuning.R")
 source("SparsePCA.R")
 source("LA(PC).R")
 source("PrincipalComponent.R")
-source("ForecastCombinations.R")
 source("AR_model.R")
 
 # Select parameters
@@ -319,14 +321,36 @@ expl_var <- as.data.frame(y_hat_matrix)
 
 ols <- "OLS"
 RF_forecomb <- "RF_forecomb"
-Error_Forecast_Combination_Lasso <- RollingWindowNew(dependent_var, expl_var, method=lasso, lag=0)
-Error_Forecast_Combination_Ridge <- RollingWindowNew(dependent_var, expl_var, method=ridge, lag=0)
+lasso_forecomb <- "Lasso FC"
+ridge_forecomb <- "Ridge FC"
+EqualWeights <- "Equal Weights"
+Error_Forecast_Combination_Lasso <- RollingWindowNew(dependent_var, expl_var, method=lasso_forecomb, lag=0)
+Error_Forecast_Combination_Ridge <- RollingWindowNew(dependent_var, expl_var, method=ridge_forecomb, lag=0)
 Error_Forecast_Combination_OLS <- RollingWindowNew(dependent_var, expl_var, method=ols, lag=0)
 Error_Forecast_Combination_EQW <- RollingWindowNew(dependent_var, expl_var, method=EqualWeights, lag=0)
 Error_Forecast_Combination_RF <- RollingWindowNew(dependent_var, expl_var, method=RF_forecomb, lag=0)
 
+lambdaList <- 10^seq(-10, 4, length.out = 100)
+error_Forecast_Combination_Lasso <- TuningRollingWindowForecastCombinations(dependent_var, y_hat_matrix, method=lasso_forecomb, lambdaList = lambdaList)
+error_Forecast_Combination_Ridge <- TuningRollingWindowForecastCombinations(dependent_var, y_hat_matrix, method=ridge_forecomb, lambdaList = lambdaList)
+error_Forecast_Combination_OLS <- TuningRollingWindowForecastCombinations(dependent_var, y_hat_matrix, method=ols)
+error_Forecast_Combination_EQW <- TuningRollingWindowForecastCombinations(dependent_var, y_hat_matrix, method=EqualWeights)
+error_Forecast_Combination_RF <- TuningRollingWindowForecastCombinations(dependent_var, y_hat_matrix, method=RF_forecomb)
 
+weights_FC_OLS <- Error_Forecast_Combination_OLS$Weights
+weights_FC_Lasso <- Error_Forecast_Combination_Lasso$Weights
+weights_FC_Ridge <- Error_Forecast_Combination_Ridge$Weights
+weights_FC_EQW <- Error_Forecast_Combination_EQW$Weights
+weights_FC_RF <- Error_Forecast_Combination_RF$Weights
 
+# determineInfluence <- function(weights) {
+#   normalized_weights <- t(apply(weights, 1, function(x) ifelse(sum(x) != 0, x / sum(x), x)))
+#   average_weights <- colMeans(normalized_weights)
+#   
+#   return(average_weights)
+# }
+source("weightsForecastCombi.R")
+test2 <- determineInfluence(weights_FC_OLS)
 
 ######################################################################
 #                                                                    #
