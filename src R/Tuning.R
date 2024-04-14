@@ -15,6 +15,12 @@ TuningRollingWindowTuningPenalized <- function(dependent_var, explanatory_vars, 
   MSEOptList <- vector("numeric", length = 0)
   YBarOptList <- vector("numeric", length = 0)
   
+  if (method == "Lasso") {
+    Lasso_coefficients <- data.frame(matrix(nrow = (nrow(explanatory_vars) - endTime), ncol = (ncol(explanatory_vars)+lag)))
+  } else {
+    Lasso_coefficients <- NULL
+  }
+  
   while (endTime + 1 <= nrow(explanatory_vars)) {
     numberOfWindows <- numberOfWindows + 1
     
@@ -36,6 +42,7 @@ TuningRollingWindowTuningPenalized <- function(dependent_var, explanatory_vars, 
     MSEOpt <- 0
     minBIC <- 12000 * 12000
     yBarOpt <- 0
+    coefOpt <- c()
     
     for(lambda in lambdaList) {
       for (alpha in alphaList) {
@@ -77,6 +84,8 @@ TuningRollingWindowTuningPenalized <- function(dependent_var, explanatory_vars, 
           lambdaOpt <- lambda
           alphaOpt <- alpha
           yBarOpt <- y_bar
+          coefOpt <- coef
+          
         } 
       }
     }
@@ -85,6 +94,9 @@ TuningRollingWindowTuningPenalized <- function(dependent_var, explanatory_vars, 
     lambdaOptList[length(lambdaOptList) + 1] <- lambdaOpt
     alphaOptList[length(alphaOptList) + 1] <- alphaOpt
     YBarOptList[length(YBarOptList) + 1] <- yBarOpt
+    if (method == "Lasso") {
+      Lasso_coefficients[numberOfWindows,] <- as.vector(t(coef))
+    }
     
     totalError <- totalError + minError
     
@@ -94,11 +106,11 @@ TuningRollingWindowTuningPenalized <- function(dependent_var, explanatory_vars, 
     endTime <- endTime + 1
   }
   print(sqrt(totalError/numberOfWindows))
-  return(list(MSEOptList, lambdaOptList, alphaOptList, YBarOptList))
+  return(list(MSEOptList, lambdaOptList, alphaOptList, YBarOptList, "Coef" = lasso_coefficients))
 }
 
 BICglm <- function(fit) {
-  tLL <- fit$nulldev -deviance(fit)  # Calculate deviance as -2*logLikelihood
+  tLL <- fit$nulldev - deviance(fit)  # Calculate deviance as -2*logLikelihood
   k <- fit$df  # Number of parameters, including intercept
   n <- fit$nobs  # Number of observations
   BIC <- log(n) * k - tLL
@@ -163,7 +175,7 @@ TuningRollingWindowForecastCombinations <- function(dependent_var, explanatory_v
           if (BICglm(model) < minBIC) {
             minBIC <- BICglm(model)
             minError <- totalErrorLoop
-            #print(paste(lambda, minBIC))
+            print(paste(lambda, minBIC))
             lambdaOpt <- lambda
             yBarOpt <- y_bar
             coefOpt <- coef
@@ -216,7 +228,7 @@ TuningRollingWindowForecastCombinations <- function(dependent_var, explanatory_v
     
     
     
-    #print(paste(beginTime, endTime))
+    print(paste(beginTime, endTime))
     
     beginTime <- beginTime + 1
     endTime <- endTime + 1

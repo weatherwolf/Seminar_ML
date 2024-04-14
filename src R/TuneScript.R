@@ -25,7 +25,8 @@ source("Tuning.R")
 source("SparsePCA.R")
 source("LA(PC).R")
 source("PrincipalComponent.R")
-source("ForecastCombinations.R")
+#source("ForecastCombinations.R")
+source("Interpretation.R")
 
 
 # Select parameters
@@ -139,6 +140,8 @@ ridge_forecomb <- "Ridge FC"
 source("Dataprocessor.R")
 source("Forecast.R")
 source("Tuning.R")
+source("Interpretation.R")
+
 
 lambdaList <- 10^seq(-10, 4, length.out = 100)
 alphaList <- seq(0.1, 0.9, by = 0.1)
@@ -158,6 +161,7 @@ lag <- best_lag_RPI
 
 
 error_Lasso <- TuningRollingWindowTuningPenalized(dependent_var, expl_var, method=lasso, lambdaList=lambdaList, alphaList = 1, lag=lag)
+test <- error_Lasso$Coef
 error_Ridge <- TuningRollingWindowTuningPenalized(dependent_var, expl_var, method=ridge, lambdaList=lambdaList, alphaList = 1, lag=lag)
 error_ElasticNet <- TuningRollingWindowTuningPenalized(dependent_var, expl_var, method=elasticNet, lambdaList=lambdaList, alphaList = alphaList, lag=lag)
 error_AdaptiveLasso <- TuningRollingWindowTuningPenalized(dependent_var, expl_var, method=adaptiveLasso, lambdaList=lambdaList, alphaList = 1, lag=lag)
@@ -198,6 +202,22 @@ print(paste("[",
             "FC_Lasso:", Diebold_FC_Lasso$p.value, 
             "FC_Ridge:", Diebold_FC_Ridge$p.value, 
             "FC_RF:", Diebold_FC_RF$p.value,
+            "]"))
+
+weights_FC_OLS <- error_Forecast_Combination_OLS$Weights
+#weights_FC_Lasso <- Error_Forecast_Combination_Lasso$Weights
+#weights_FC_Ridge <- Error_Forecast_Combination_Ridge$Weights
+weights_FC_EQW <- error_Forecast_Combination_EQW$Weights
+weights_FC_RF <- error_Forecast_Combination_RF$Weights
+
+percentages_FC_OLS <- determineInfluence(weights_FC_OLS)
+percentages_FC_EQW <- determineInfluence(weights_FC_EQW)
+percentages_FC_RF <- determineInfluence(weights_FC_RF)
+print("Forecast combination percentages")
+print(paste("[",
+            "FC OLS:", percentages_FC_OLS,
+            "FC_EQW:", percentages_FC_EQW,
+            "FC_RF:", percentages_FC_RF,
             "]"))
 
 ##################################################################
@@ -270,6 +290,21 @@ print(paste("[",
             "FC_RF:", Diebold_FC_RF$p.value,
             "]"))
 
+weights_FC_OLS <- error_Forecast_Combination_OLS$Weights
+#weights_FC_Lasso <- Error_Forecast_Combination_Lasso$Weights
+#weights_FC_Ridge <- Error_Forecast_Combination_Ridge$Weights
+weights_FC_EQW <- error_Forecast_Combination_EQW$Weights
+weights_FC_RF <- error_Forecast_Combination_RF$Weights
+
+percentages_FC_OLS <- determineInfluence(weights_FC_OLS)
+percentages_FC_EQW <- determineInfluence(weights_FC_EQW)
+percentages_FC_RF <- determineInfluence(weights_FC_RF)
+print("Forecast combination percentages")
+print(paste("[",
+            "FC OLS:", percentages_FC_OLS,
+            "FC_EQW:", percentages_FC_EQW,
+            "FC_RF:", percentages_FC_RF,
+            "]"))
 
 #####################################################################
 #                                                                   #
@@ -341,6 +376,22 @@ print(paste("[",
             "FC_RF:", Diebold_FC_RF$p.value,
             "]"))
 
+weights_FC_OLS <- error_Forecast_Combination_OLS$Weights
+#weights_FC_Lasso <- Error_Forecast_Combination_Lasso$Weights
+#weights_FC_Ridge <- Error_Forecast_Combination_Ridge$Weights
+weights_FC_EQW <- error_Forecast_Combination_EQW$Weights
+weights_FC_RF <- error_Forecast_Combination_RF$Weights
+
+percentages_FC_OLS <- determineInfluence(weights_FC_OLS)
+percentages_FC_EQW <- determineInfluence(weights_FC_EQW)
+percentages_FC_RF <- determineInfluence(weights_FC_RF)
+print("Forecast combination percentages")
+print(paste("[",
+            "FC OLS:", percentages_FC_OLS,
+            "FC_EQW:", percentages_FC_EQW,
+            "FC_RF:", percentages_FC_RF,
+            "]"))
+
 ####################################################################
 #                                                                  #
 #               Code used to create CPIAUCSL outputs               # 
@@ -408,6 +459,22 @@ print(paste("[",
             "FC_Lasso:", Diebold_FC_Lasso$p.value, 
             "FC_Ridge:", Diebold_FC_Ridge$p.value, 
             "FC_RF:", Diebold_FC_RF$p.value,
+            "]"))
+
+weights_FC_OLS <- error_Forecast_Combination_OLS$Weights
+#weights_FC_Lasso <- Error_Forecast_Combination_Lasso$Weights
+#weights_FC_Ridge <- Error_Forecast_Combination_Ridge$Weights
+weights_FC_EQW <- error_Forecast_Combination_EQW$Weights
+weights_FC_RF <- error_Forecast_Combination_RF$Weights
+
+percentages_FC_OLS <- determineInfluence(weights_FC_OLS)
+percentages_FC_EQW <- determineInfluence(weights_FC_EQW)
+percentages_FC_RF <- determineInfluence(weights_FC_RF)
+print("Forecast combination percentages")
+print(paste("[",
+            "FC OLS:", percentages_FC_OLS,
+            "FC_EQW:", percentages_FC_EQW,
+            "FC_RF:", percentages_FC_RF,
             "]"))
 
 ####################################################################
@@ -479,6 +546,22 @@ print(paste("[",
             "FC_RF:", Diebold_FC_RF$p.value,
             "]"))
 
+weights_FC_OLS <- error_Forecast_Combination_OLS$Weights
+#weights_FC_Lasso <- Error_Forecast_Combination_Lasso$Weights
+#weights_FC_Ridge <- Error_Forecast_Combination_Ridge$Weights
+weights_FC_EQW <- error_Forecast_Combination_EQW$Weights
+weights_FC_RF <- error_Forecast_Combination_RF$Weights
+
+percentages_FC_OLS <- determineInfluence(weights_FC_OLS)
+percentages_FC_EQW <- determineInfluence(weights_FC_EQW)
+percentages_FC_RF <- determineInfluence(weights_FC_RF)
+print("Forecast combination percentages")
+print(paste("[",
+            "FC OLS:", percentages_FC_OLS,
+            "FC_EQW:", percentages_FC_EQW,
+            "FC_RF:", percentages_FC_RF,
+            "]"))
+
 ##################################################################
 #                                                                #
 #               Code used to create PAYEMS outputs               # 
@@ -546,6 +629,22 @@ print(paste("[",
             "FC_Lasso:", Diebold_FC_Lasso$p.value, 
             "FC_Ridge:", Diebold_FC_Ridge$p.value, 
             "FC_RF:", Diebold_FC_RF$p.value,
+            "]"))
+
+weights_FC_OLS <- error_Forecast_Combination_OLS$Weights
+#weights_FC_Lasso <- Error_Forecast_Combination_Lasso$Weights
+#weights_FC_Ridge <- Error_Forecast_Combination_Ridge$Weights
+weights_FC_EQW <- error_Forecast_Combination_EQW$Weights
+weights_FC_RF <- error_Forecast_Combination_RF$Weights
+
+percentages_FC_OLS <- determineInfluence(weights_FC_OLS)
+percentages_FC_EQW <- determineInfluence(weights_FC_EQW)
+percentages_FC_RF <- determineInfluence(weights_FC_RF)
+print("Forecast combination percentages")
+print(paste("[",
+            "FC OLS:", percentages_FC_OLS,
+            "FC_EQW:", percentages_FC_EQW,
+            "FC_RF:", percentages_FC_RF,
             "]"))
 
 #################################################################
@@ -617,6 +716,22 @@ print(paste("[",
             "FC_RF:", Diebold_FC_RF$p.value,
             "]"))
 
+weights_FC_OLS <- error_Forecast_Combination_OLS$Weights
+#weights_FC_Lasso <- Error_Forecast_Combination_Lasso$Weights
+#weights_FC_Ridge <- Error_Forecast_Combination_Ridge$Weights
+weights_FC_EQW <- error_Forecast_Combination_EQW$Weights
+weights_FC_RF <- error_Forecast_Combination_RF$Weights
+
+percentages_FC_OLS <- determineInfluence(weights_FC_OLS)
+percentages_FC_EQW <- determineInfluence(weights_FC_EQW)
+percentages_FC_RF <- determineInfluence(weights_FC_RF)
+print("Forecast combination percentages")
+print(paste("[",
+            "FC OLS:", percentages_FC_OLS,
+            "FC_EQW:", percentages_FC_EQW,
+            "FC_RF:", percentages_FC_RF,
+            "]"))
+
 ######################################################################
 #                                                                    #
 #               Code used to create WPSFD49207 outputs               # 
@@ -684,4 +799,20 @@ print(paste("[",
             "FC_Lasso:", Diebold_FC_Lasso$p.value, 
             "FC_Ridge:", Diebold_FC_Ridge$p.value, 
             "FC_RF:", Diebold_FC_RF$p.value,
+            "]"))
+
+weights_FC_OLS <- error_Forecast_Combination_OLS$Weights
+#weights_FC_Lasso <- Error_Forecast_Combination_Lasso$Weights
+#weights_FC_Ridge <- Error_Forecast_Combination_Ridge$Weights
+weights_FC_EQW <- error_Forecast_Combination_EQW$Weights
+weights_FC_RF <- error_Forecast_Combination_RF$Weights
+
+percentages_FC_OLS <- determineInfluence(weights_FC_OLS)
+percentages_FC_EQW <- determineInfluence(weights_FC_EQW)
+percentages_FC_RF <- determineInfluence(weights_FC_RF)
+print("Forecast combination percentages")
+print(paste("[",
+            "FC OLS:", percentages_FC_OLS,
+            "FC_EQW:", percentages_FC_EQW,
+            "FC_RF:", percentages_FC_RF,
             "]"))

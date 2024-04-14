@@ -153,9 +153,9 @@ dependent_var_PCEPI <- dependent_vars_data$PCEP
 # getHighlyCorrelated <- function(value_cor=0.8, name, data){
 #   ### Returns the highly correlated variables in the data with the variable "name", based on if the correlation
 #   ### is higher than value_cor or smaller than -(value_cor) (default value is 0.8)
-#   ### 
+#   ###
 #   ### "name" is included in the highly correlated variables, because correlation with itself is 1
-#   
+# 
 #   highly_cor <- c()
 #   correlations <- cor(data)
 #   dependent_var_cor <- cbind(correlations[, name])
@@ -167,8 +167,8 @@ dependent_var_PCEPI <- dependent_vars_data$PCEP
 #     }
 #   }
 #   return (highly_cor)
-# } 
-# 
+# }
+
 # # for each dependent variable, create vector that contains the highly correlated variables
 # highly_cor_RPI <- getHighlyCorrelated(name = "RPI", data = data)
 # highly_cor_INDPRO <- getHighlyCorrelated(name = "INDPRO", data = data)
@@ -274,6 +274,8 @@ elasticNet <- "ElasticNet"
 adaptiveLasso <- "AdaptiveLasso"
 
 error_Lasso_stat <- RollingWindowNew(dependent_var, expl_var, method=lasso, lag=lag)
+lasso_coefficients <- error_Lasso_stat$LassoCoef
+lasso_coefficients2 <- error_Lasso_stat$LassoCoef
 error_Ridge_stat <- RollingWindowNew(dependent_var, expl_var, method=ridge, lag=lag)
 error_ElasticNet_stat <- RollingWindowNew(dependent_var, expl_var, method=elasticNet, alpha=0.01, lag=lag)
 error_AdaptiveLasso_stat <- RollingWindowNew(dependent_var, expl_var, method=adaptiveLasso, lag=lag)
@@ -302,6 +304,7 @@ source("Model.R")
 source("Tuning.R")
 source("ForecastCombinations.R")
 source("Tuning.R")
+source("Interpretation.R")
 
 dependent_var <- as.data.frame(dependent_var_RPI)
 expl_var <- as.data.frame(expl_vars_RPI)
@@ -330,12 +333,6 @@ Error_Forecast_Combination_OLS <- RollingWindowNew(dependent_var, expl_var, meth
 Error_Forecast_Combination_EQW <- RollingWindowNew(dependent_var, expl_var, method=EqualWeights, lag=0)
 Error_Forecast_Combination_RF <- RollingWindowNew(dependent_var, expl_var, method=RF_forecomb, lag=0)
 
-lambdaList <- 10^seq(-10, 4, length.out = 100)
-error_Forecast_Combination_Lasso <- TuningRollingWindowForecastCombinations(dependent_var, y_hat_matrix, method=lasso_forecomb, lambdaList = lambdaList)
-error_Forecast_Combination_Ridge <- TuningRollingWindowForecastCombinations(dependent_var, y_hat_matrix, method=ridge_forecomb, lambdaList = lambdaList)
-error_Forecast_Combination_OLS <- TuningRollingWindowForecastCombinations(dependent_var, y_hat_matrix, method=ols)
-error_Forecast_Combination_EQW <- TuningRollingWindowForecastCombinations(dependent_var, y_hat_matrix, method=EqualWeights)
-error_Forecast_Combination_RF <- TuningRollingWindowForecastCombinations(dependent_var, y_hat_matrix, method=RF_forecomb)
 
 weights_FC_OLS <- Error_Forecast_Combination_OLS$Weights
 weights_FC_Lasso <- Error_Forecast_Combination_Lasso$Weights
@@ -343,14 +340,17 @@ weights_FC_Ridge <- Error_Forecast_Combination_Ridge$Weights
 weights_FC_EQW <- Error_Forecast_Combination_EQW$Weights
 weights_FC_RF <- Error_Forecast_Combination_RF$Weights
 
-# determineInfluence <- function(weights) {
-#   normalized_weights <- t(apply(weights, 1, function(x) ifelse(sum(x) != 0, x / sum(x), x)))
-#   average_weights <- colMeans(normalized_weights)
-#   
-#   return(average_weights)
-# }
-source("weightsForecastCombi.R")
-test2 <- determineInfluence(weights_FC_OLS)
+
+
+source("Interpretation.R")
+percentages_FC_OLS <- determineInfluence(weights_FC_OLS)
+percentages_FC_EQW <- determineInfluence(weights_FC_EQW)
+percentages_FC_RF <- determineInfluence(weights_FC_RF)
+percentage_FC_Lasso <- determineInfluence(weights_FC_Lasso)
+percentage_FC_Ridge <- determineInfluence(weights_FC_Ridge)
+nonZeroCoef <- numberOfTimesSelectedLasso(lasso_coefficients)
+
+
 
 ######################################################################
 #                                                                    #
