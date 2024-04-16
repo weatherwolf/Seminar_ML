@@ -1,3 +1,55 @@
+if (!require("stats")) {
+  install.packages("stats")
+}
+if (!require("data.table")) {
+  install.packages("data.table")
+}
+if (!require("glmnet")) {
+  install.packages("glmnet")
+}
+if (!require("R6")) {
+  install.packages("R6")
+}
+if (!require("stats")) {
+  install.packages("stats")
+}
+if (!require("data.table")) {
+  install.packages("data.table")
+}
+if (!require("forecast")) {
+  install.packages("forecast")
+}
+if (!require("BreakPoints")) {
+  install.packages("BreakPoints")
+}
+if (!require("strucchange")) {
+  install.packages("strucchange")
+}
+if (!require("changepoint")) {
+  install.packages("changepoint")
+}
+if (!require("dm")) {
+  install.packages("dm")
+}
+if (!require("tseries")) {
+  install.packages("tseries")
+}
+if (!require("randomForest")) {
+  install.packages("randomForest")
+}
+if (!require("sparsepca")) {
+  install.packages("sparsepca")
+}
+if (!require("lars")) {
+  install.packages("lars")
+}
+if (!require("ForecastComb")) {
+  install.packages("ForecastComb")
+}
+if(!require(scales)){
+  install.packages("scales", dependencies=TRUE)
+  library(scales)
+}
 library(stats)
 library(data.table)
 library(glmnet)
@@ -17,12 +69,15 @@ library(ForecastComb)
 # # Load custom functions from R scripts
 source("Dataprocessor.R")
 source("Forecast.R")
-source("Model.R")
 source("Tuning.R")
 source("SparsePCA.R")
 source("LA(PC).R")
 source("PrincipalComponent.R")
+<<<<<<< HEAD
+source("Interpretation.R")
+=======
 source("ForecastCombinations.R")
+>>>>>>> 8e617ff8591411a406729d51f9c64a9063838d7b
 
 
 # Select parameters
@@ -254,6 +309,23 @@ source("Model.R")
 source("Tuning.R")
 source("ForecastCombinations.R")
 source("Tuning.R")
+<<<<<<< HEAD
+source("Interpretation.R")
+
+
+lambdaList <- 10^seq(-5, 4, length.out = 10)
+alphaList <- seq(0.1, 0.9, by = 0.1)
+kList <- c(5,6,7,8,9,10,11,12,13,14,15)
+
+
+
+###############################################################
+#                                                             #
+#               Code used to create RPI outputs               # 
+#                                                             #
+###############################################################
+=======
+>>>>>>> 8e617ff8591411a406729d51f9c64a9063838d7b
 
 dependent_var = as.data.frame(dependent_var_RPI)
 expl_var = as.data.frame(expl_vars_RPI)
@@ -262,8 +334,18 @@ factors_SPCA = as.data.frame(factors_spca_RPI)
 factors_LAPC = as.data.frame(factors_lapc_RPI)
 lag <- best_lag_RPI
 
+<<<<<<< HEAD
+test <- TuningCrossValidationPenalized(dependent_var, expl_var, method=lasso, lambdaList=lambdaList, alphaList = 1, lag=lag)
+
+
+error_Lasso <- TuningRollingWindowTuningPenalized(dependent_var, expl_var, method=lasso, lambdaList=lambdaList, alphaList = 1, lag=lag)
+error_Ridge <- TuningRollingWindowTuningPenalized(dependent_var, expl_var, method=ridge, lambdaList=lambdaList, alphaList = 1, lag=lag)
+error_ElasticNet <- TuningRollingWindowTuningPenalized(dependent_var, expl_var, method=elasticNet, lambdaList=lambdaList, alphaList = alphaList, lag=lag)
+error_AdaptiveLasso <- TuningRollingWindowTuningPenalized(dependent_var, expl_var, method=adaptiveLasso, lambdaList=lambdaList, alphaList = 1, lag=lag)
+=======
 y_hat_matrix <- RollingWindowYHat(dependent_var, expl_var, factors_PCA=factors_PCA, lag=lag)
 
+>>>>>>> 8e617ff8591411a406729d51f9c64a9063838d7b
 
 
 dependent_var = as.data.frame(dependent_var_RPI)
@@ -271,6 +353,41 @@ dependent_var <- as.data.frame(dependent_var[121:(nrow(dependent_var)), ])
 expl_var = as.data.frame(y_hat_matrix)
 
 
+<<<<<<< HEAD
+print(paste("[", sqrt(sum(error_AR)/640), sqrt(sum(error_Lasso)/640), sqrt(sum(error_Ridge)/640), sqrt(sum(error_ElasticNet)/640), 
+            sqrt(sum(error_AdaptiveLasso)/640), sqrt(sum(error_PCA)/640), sqrt(sum(error_SPCA)/640), sqrt(sum(error_LAPC)/640),
+            sqrt(sum(error_RF)/640), sqrt(sum(error_Forecast_Combination_EQW)/520), sqrt(sum(error_Forecast_Combination_OLS)/520), sqrt(sum(error_Forecast_Combination_Lasso)/520), 
+            sqrt(sum(error_Forecast_Combination_Ridge)/520), sqrt(sum(error_Forecast_Combination_RF)/520), "]"))
+
+error_Lasso_dm <- error_Lasso_stat$MSE
+error_AR_dm <- error_AR_stat$MSE
+error_Ridge_dm <- error_Ridge_stat$MSE
+error_ElasticNet_dm <- error_ElasticNet_stat$MSE
+error_AdaptiveLasso_dm <- error_AdaptiveLasso_stat$MSE
+error_PCA_dm <- error_PCA$MSE
+error_SPCA_dm <- error_SPCA$MSE
+error_LAPC_dm <- error_LAPC$MSE
+error_FC_EQW_dm <- error_Forecast_Combination_EQW$MSE
+error_FC_OLS_dm <- error_Forecast_Combination_OLS$MSE
+error_FC_lasso_dm <- error_Forecast_Combination_Lasso$MSE
+error_FC_ridge_dm <- error_Forecast_Combination_Ridge$MSE
+error_FC_RF_dm <- error_Forecast_Combination_RF$MSE
+
+Diebold_Lasso <- dm.test(error_Lasso_dm, error_AR_dm, h=1)
+Diebold_Ridge <- dm.test(error_Ridge_dm, error_AR_dm, h=1)
+Diebold_ElasticNet <- dm.test(error_ElasticNet_dm, error_AR_dm, h=1)
+Diebold_AdaptiveLasso <- dm.test(error_AdaptiveLasso_dm, error_AR_dm, h=1)
+Diebold_PCA <- dm.test(error_PCA_dm, error_AR_dm, h=1)
+Diebold_SPCA <- dm.test(error_SPCA_dm, error_AR_dm, h=1)
+Diebold_LAPC <- dm.test(error_LAPC_dm, error_AR_dm, h=1)
+Diebold_RF <- dm.test(error_RF_dm, error_AR_dm, h=1)
+Diebold_FC_EQW <- dm.test(error_FC_EQW_dm, error_AR_dm, h=1)
+Diebold_FC_OLS <- dm.test(error_FC_OLS_dm, error_AR_dm, h=1)
+Diebold_FC_Lasso <- dm.test(error_FC_Lasso_dm, error_AR_dm, h=1)
+Diebold_FC_Ridge <- dm.test(error_FC_Ridge_dm, error_AR_dm, h=1)
+Diebold_FC_RF <- dm.test(error_FC_RF_dm, error_AR_dm, h=1)
+=======
+>>>>>>> 8e617ff8591411a406729d51f9c64a9063838d7b
 
 Error_Forecast_Combination_Lasso <- RollingWindowNew(dependent_var, expl_var, method=lasso, lag=0)
 Error_Forecast_Combination_Ridge <- RollingWindowNew(dependent_var, expl_var, method=ridge, lag=0)
@@ -278,7 +395,663 @@ Error_Forecast_Combination_OLS <- RollingWindowNew(dependent_var, expl_var, meth
 Error_Forecast_Combination_EQW <- RollingWindowNew(dependent_var, expl_var, method=EqualWeights, lag=0)
 Error_Forecast_Combination_RF <- RollingWindowNew(dependent_var, expl_var, method=RF, lag=0)
 
+<<<<<<< HEAD
+weights_FC_OLS <- error_Forecast_Combination_OLS$Weights
+weights_FC_Lasso <- Error_Forecast_Combination_Lasso$Weights
+weights_FC_Ridge <- Error_Forecast_Combination_Ridge$Weights
+weights_FC_EQW <- error_Forecast_Combination_EQW$Weights
+weights_FC_RF <- error_Forecast_Combination_RF$Weights
 
+percentages_FC_OLS <- determineInfluence(weights_FC_OLS)
+percentages_FC_EQW <- determineInfluence(weights_FC_EQW)
+percentages_FC_RF <- determineInfluence(weights_FC_RF)
+percentages_FC_Lasso <- determineInfluence(weights_FC_Lasso)
+percentages_FC_Ridge <- determineInfluence(weights_FC_Ridge)
+
+
+print("Forecast combination percentages")
+print(paste("[",
+            "FC_EQW:", percentages_FC_EQW,
+            "FC OLS:", percentages_FC_OLS,
+            "FC_Lasso:", percentages_FC_Lasso,
+            "FC_Ridge:", percentages_FC_Ridge,
+            "FC_RF:", percentages_FC_RF,
+            "]"))
+
+##################################################################
+#                                                                #
+#               Code used to create INDPRO outputs               # 
+#                                                                #
+##################################################################
+
+dependent_var = as.data.frame(dependent_var_INDPRO)
+expl_var = as.data.frame(expl_vars_INDPRO)
+lag <- best_lag_INDPRO
+
+
+error_Lasso <- TuningRollingWindowTuningPenalized(dependent_var, expl_var, method=lasso, lambdaList=lambdaList, alphaList = 1, lag=lag)
+error_Ridge <- TuningRollingWindowTuningPenalized(dependent_var, expl_var, method=ridge, lambdaList=lambdaList, alphaList = 1, lag=lag)
+error_ElasticNet <- TuningRollingWindowTuningPenalized(dependent_var, expl_var, method=elasticNet, lambdaList=lambdaList, alphaList = alphaList, lag=lag)
+error_AdaptiveLasso <- TuningRollingWindowTuningPenalized(dependent_var, expl_var, method=adaptiveLasso, lambdaList=lambdaList, alphaList = 1, lag=lag)
+
+error_PCA <- TuningRollingWindowFactorModels(dependent_var, explanatory_vars = expl_var, method = pca, kList=kList, lag=lag)
+error_SPCA <- TuningRollingWindowFactorModels(dependent_var, explanatory_vars = expl_var, method = spca, kList=kList, alphaList= c(0.0001, 0.001, 0.01), lag=lag)
+error_LAPC <- TuningRollingWindowFactorModels(dependent_var, explanatory_vars = expl_var, method = lapc, kList=kList, lag=lag)
+
+error_AR <- TuningAR(dependent_var, expl_var, lag=lag)
+error_RF <- TuningRF(dependent_var, expl_var, lag=lag)
+
+dependent_var = as.data.frame(dependent_var_RPI)
+dependent_var <- as.data.frame(dependent_var[121:(nrow(dependent_var)), ])
+yhatMatrix <- cbind(error_Lasso[[4]], error_PCA[[4]], error_AR[[2]], error_RF[[2]])
+
+error_Forecast_Combination_Lasso <- TuningRollingWindowForecastCombinations(dependent_var, yhatMatrix, method=lasso_forecomb, lambdaList = lambdaList)
+error_Forecast_Combination_Ridge <- TuningRollingWindowForecastCombinations(dependent_var, yhatMatrix, method=ridge_forecomb, lambdaList = lambdaList)
+error_Forecast_Combination_OLS <- TuningRollingWindowForecastCombinations(dependent_var, yhatMatrix, method=ols)
+error_Forecast_Combination_EQW <- TuningRollingWindowForecastCombinations(dependent_var, yhatMatrix, method=EqualWeights)
+error_Forecast_Combination_RF <- TuningRollingWindowForecastCombinations(dependent_var, yhatMatrix, method=RF_forecomb)
+
+print(paste("[", sqrt(sum(error_AR)/640), sqrt(sum(error_Lasso)/640), sqrt(sum(error_Ridge)/640), sqrt(sum(error_ElasticNet)/640), 
+            sqrt(sum(error_AdaptiveLasso)/640), sqrt(sum(error_PCA)/640), sqrt(sum(error_SPCA)/640), sqrt(sum(error_LAPC)/640),
+            sqrt(sum(error_RF)/640), sqrt(sum(error_Forecast_Combination_EQW)/520), sqrt(sum(error_Forecast_Combination_OLS)/520), sqrt(sum(error_Forecast_Combination_Lasso)/520), 
+            sqrt(sum(error_Forecast_Combination_Ridge)/520), sqrt(sum(error_Forecast_Combination_RF)/520), "]"))
+
+
+
+error_Lasso_dm <- error_Lasso_stat$MSE
+error_AR_dm <- error_AR_stat$MSE
+error_Ridge_dm <- error_Ridge_stat$MSE
+error_ElasticNet_dm <- error_ElasticNet_stat$MSE
+error_AdaptiveLasso_dm <- error_AdaptiveLasso_stat$MSE
+error_PCA_dm <- error_PCA$MSE
+error_SPCA_dm <- error_SPCA$MSE
+error_LAPC_dm <- error_LAPC$MSE
+error_FC_EQW_dm <- error_Forecast_Combination_EQW$MSE
+error_FC_OLS_dm <- error_Forecast_Combination_OLS$MSE
+error_FC_lasso_dm <- error_Forecast_Combination_Lasso$MSE
+error_FC_ridge_dm <- error_Forecast_Combination_Ridge$MSE
+error_FC_RF_dm <- error_Forecast_Combination_RF$MSE
+
+Diebold_Lasso <- dm.test(error_Lasso_dm, error_AR_dm, h=1)
+Diebold_Ridge <- dm.test(error_Ridge_dm, error_AR_dm, h=1)
+Diebold_ElasticNet <- dm.test(error_ElasticNet_dm, error_AR_dm, h=1)
+Diebold_AdaptiveLasso <- dm.test(error_AdaptiveLasso_dm, error_AR_dm, h=1)
+Diebold_PCA <- dm.test(error_PCA_dm, error_AR_dm, h=1)
+Diebold_SPCA <- dm.test(error_SPCA_dm, error_AR_dm, h=1)
+Diebold_LAPC <- dm.test(error_LAPC_dm, error_AR_dm, h=1)
+Diebold_RF <- dm.test(error_RF_dm, error_AR_dm, h=1)
+Diebold_FC_EQW <- dm.test(error_FC_EQW_dm, error_AR_dm, h=1)
+Diebold_FC_OLS <- dm.test(error_FC_OLS_dm, error_AR_dm, h=1)
+Diebold_FC_Lasso <- dm.test(error_FC_Lasso_dm, error_AR_dm, h=1)
+Diebold_FC_Ridge <- dm.test(error_FC_Ridge_dm, error_AR_dm, h=1)
+Diebold_FC_RF <- dm.test(error_FC_RF_dm, error_AR_dm, h=1)
+
+print(paste("[", 
+            "Lasso:", Diebold_Lasso$p.value, 
+            "Ridge:", Diebold_Ridge$p.value, 
+            "ElasticNet:", Diebold_ElasticNet$p.value, 
+            "AdaptiveLasso:", Diebold_AdaptiveLasso$p.value,
+            "PCA:", Diebold_PCA$p.value, 
+            "SPCA:", Diebold_SPCA$p.value, 
+            "LAPC:", Diebold_LAPC$p.value, 
+            "RF:", Diebold_RF$p.value, 
+            "FC_EQW:", Diebold_FC_EQW$p.value, 
+            "FC_OLS:", Diebold_FC_OLS$p.value, 
+            "FC_Lasso:", Diebold_FC_Lasso$p.value, 
+            "FC_Ridge:", Diebold_FC_Ridge$p.value, 
+            "FC_RF:", Diebold_FC_RF$p.value,
+            "]"))
+
+weights_FC_OLS <- error_Forecast_Combination_OLS$Weights
+weights_FC_Lasso <- Error_Forecast_Combination_Lasso$Weights
+weights_FC_Ridge <- Error_Forecast_Combination_Ridge$Weights
+weights_FC_EQW <- error_Forecast_Combination_EQW$Weights
+weights_FC_RF <- error_Forecast_Combination_RF$Weights
+
+percentages_FC_OLS <- determineInfluence(weights_FC_OLS)
+percentages_FC_EQW <- determineInfluence(weights_FC_EQW)
+percentages_FC_RF <- determineInfluence(weights_FC_RF)
+percentages_FC_Lasso <- determineInfluence(weights_FC_Lasso)
+percentages_FC_Ridge <- determineInfluence(weights_FC_Ridge)
+
+
+print("Forecast combination percentages")
+print(paste("[",
+            "FC_EQW:", percentages_FC_EQW,
+            "FC OLS:", percentages_FC_OLS,
+            "FC_Lasso:", percentages_FC_Lasso,
+            "FC_Ridge:", percentages_FC_Ridge,
+            "FC_RF:", percentages_FC_RF,
+            "]"))
+
+#####################################################################
+#                                                                   #
+#               Code used to create CMRMTSPLx outputs               # 
+#                                                                   #
+#####################################################################
+
+dependent_var = as.data.frame(dependent_var_CMRMTSPLx)
+expl_var = as.data.frame(expl_vars_CMRMTSPLx)
+lag <- best_lag_CMRMTSPLx
+
+
+error_Lasso <- TuningRollingWindowTuningPenalized(dependent_var, expl_var, method=lasso, lambdaList=lambdaList, alphaList = 1, lag=lag)
+error_Ridge <- TuningRollingWindowTuningPenalized(dependent_var, expl_var, method=ridge, lambdaList=lambdaList, alphaList = 1, lag=lag)
+error_ElasticNet <- TuningRollingWindowTuningPenalized(dependent_var, expl_var, method=elasticNet, lambdaList=lambdaList, alphaList = alphaList, lag=lag)
+error_AdaptiveLasso <- TuningRollingWindowTuningPenalized(dependent_var, expl_var, method=adaptiveLasso, lambdaList=lambdaList, alphaList = 1, lag=lag)
+
+error_PCA <- TuningRollingWindowFactorModels(dependent_var, explanatory_vars = expl_var, method = pca, kList=kList, lag=lag)
+error_SPCA <- TuningRollingWindowFactorModels(dependent_var, explanatory_vars = expl_var, method = spca, kList=kList, alphaList= c(0.0001, 0.001, 0.01), lag=lag)
+error_LAPC <- TuningRollingWindowFactorModels(dependent_var, explanatory_vars = expl_var, method = lapc, kList=kList, lag=lag)
+
+error_AR <- TuningAR(dependent_var, expl_var, lag=lag)
+error_RF <- TuningRF(dependent_var, expl_var, lag=lag)
+
+dependent_var = as.data.frame(dependent_var_RPI)
+dependent_var <- as.data.frame(dependent_var[121:(nrow(dependent_var)), ])
+yhatMatrix <- cbind(error_Lasso[[4]], error_PCA[[4]], error_AR[[2]], error_RF[[2]])
+
+error_Forecast_Combination_Lasso <- TuningRollingWindowForecastCombinations(dependent_var, yhatMatrix, method=lasso_forecomb, lambdaList = lambdaList)
+error_Forecast_Combination_Ridge <- TuningRollingWindowForecastCombinations(dependent_var, yhatMatrix, method=ridge_forecomb, lambdaList = lambdaList)
+error_Forecast_Combination_OLS <- TuningRollingWindowForecastCombinations(dependent_var, yhatMatrix, method=ols)
+error_Forecast_Combination_EQW <- TuningRollingWindowForecastCombinations(dependent_var, yhatMatrix, method=EqualWeights)
+error_Forecast_Combination_RF <- TuningRollingWindowForecastCombinations(dependent_var, yhatMatrix, method=RF_forecomb)
+
+print(paste("[", sqrt(sum(error_AR)/640), sqrt(sum(error_Lasso)/640), sqrt(sum(error_Ridge)/640), sqrt(sum(error_ElasticNet)/640), 
+            sqrt(sum(error_AdaptiveLasso)/640), sqrt(sum(error_PCA)/640), sqrt(sum(error_SPCA)/640), sqrt(sum(error_LAPC)/640),
+            sqrt(sum(error_RF)/640), sqrt(sum(error_Forecast_Combination_EQW)/520), sqrt(sum(error_Forecast_Combination_OLS)/520), sqrt(sum(error_Forecast_Combination_Lasso)/520), 
+            sqrt(sum(error_Forecast_Combination_Ridge)/520), sqrt(sum(error_Forecast_Combination_RF)/520), "]"))
+
+
+
+error_Lasso_dm <- error_Lasso_stat$MSE
+error_AR_dm <- error_AR_stat$MSE
+error_Ridge_dm <- error_Ridge_stat$MSE
+error_ElasticNet_dm <- error_ElasticNet_stat$MSE
+error_AdaptiveLasso_dm <- error_AdaptiveLasso_stat$MSE
+error_PCA_dm <- error_PCA$MSE
+error_SPCA_dm <- error_SPCA$MSE
+error_LAPC_dm <- error_LAPC$MSE
+error_FC_EQW_dm <- error_Forecast_Combination_EQW$MSE
+error_FC_OLS_dm <- error_Forecast_Combination_OLS$MSE
+error_FC_lasso_dm <- error_Forecast_Combination_Lasso$MSE
+error_FC_ridge_dm <- error_Forecast_Combination_Ridge$MSE
+error_FC_RF_dm <- error_Forecast_Combination_RF$MSE
+
+Diebold_Lasso <- dm.test(error_Lasso_dm, error_AR_dm, h=1)
+Diebold_Ridge <- dm.test(error_Ridge_dm, error_AR_dm, h=1)
+Diebold_ElasticNet <- dm.test(error_ElasticNet_dm, error_AR_dm, h=1)
+Diebold_AdaptiveLasso <- dm.test(error_AdaptiveLasso_dm, error_AR_dm, h=1)
+Diebold_PCA <- dm.test(error_PCA_dm, error_AR_dm, h=1)
+Diebold_SPCA <- dm.test(error_SPCA_dm, error_AR_dm, h=1)
+Diebold_LAPC <- dm.test(error_LAPC_dm, error_AR_dm, h=1)
+Diebold_RF <- dm.test(error_RF_dm, error_AR_dm, h=1)
+Diebold_FC_EQW <- dm.test(error_FC_EQW_dm, error_AR_dm, h=1)
+Diebold_FC_OLS <- dm.test(error_FC_OLS_dm, error_AR_dm, h=1)
+Diebold_FC_Lasso <- dm.test(error_FC_Lasso_dm, error_AR_dm, h=1)
+Diebold_FC_Ridge <- dm.test(error_FC_Ridge_dm, error_AR_dm, h=1)
+Diebold_FC_RF <- dm.test(error_FC_RF_dm, error_AR_dm, h=1)
+
+print(paste("[", 
+            "Lasso:", Diebold_Lasso$p.value, 
+            "Ridge:", Diebold_Ridge$p.value, 
+            "ElasticNet:", Diebold_ElasticNet$p.value, 
+            "AdaptiveLasso:", Diebold_AdaptiveLasso$p.value,
+            "PCA:", Diebold_PCA$p.value, 
+            "SPCA:", Diebold_SPCA$p.value, 
+            "LAPC:", Diebold_LAPC$p.value, 
+            "RF:", Diebold_RF$p.value, 
+            "FC_EQW:", Diebold_FC_EQW$p.value, 
+            "FC_OLS:", Diebold_FC_OLS$p.value, 
+            "FC_Lasso:", Diebold_FC_Lasso$p.value, 
+            "FC_Ridge:", Diebold_FC_Ridge$p.value, 
+            "FC_RF:", Diebold_FC_RF$p.value,
+            "]"))
+
+weights_FC_OLS <- error_Forecast_Combination_OLS$Weights
+weights_FC_Lasso <- Error_Forecast_Combination_Lasso$Weights
+weights_FC_Ridge <- Error_Forecast_Combination_Ridge$Weights
+weights_FC_EQW <- error_Forecast_Combination_EQW$Weights
+weights_FC_RF <- error_Forecast_Combination_RF$Weights
+
+percentages_FC_OLS <- determineInfluence(weights_FC_OLS)
+percentages_FC_EQW <- determineInfluence(weights_FC_EQW)
+percentages_FC_RF <- determineInfluence(weights_FC_RF)
+percentages_FC_Lasso <- determineInfluence(weights_FC_Lasso)
+percentages_FC_Ridge <- determineInfluence(weights_FC_Ridge)
+
+
+print("Forecast combination percentages")
+print(paste("[",
+            "FC_EQW:", percentages_FC_EQW,
+            "FC OLS:", percentages_FC_OLS,
+            "FC_Lasso:", percentages_FC_Lasso,
+            "FC_Ridge:", percentages_FC_Ridge,
+            "FC_RF:", percentages_FC_RF,
+            "]"))
+
+####################################################################
+#                                                                  #
+#               Code used to create CPIAUCSL outputs               # 
+#                                                                  #
+####################################################################
+
+dependent_var = as.data.frame(dependent_var_CPIAUCSL)
+expl_var = as.data.frame(expl_vars_CPIAUCSL)
+lag <- best_lag_CPIAUCSL
+
+
+error_Lasso <- TuningRollingWindowTuningPenalized(dependent_var, expl_var, method=lasso, lambdaList=lambdaList, alphaList = 1, lag=lag)
+error_Ridge <- TuningRollingWindowTuningPenalized(dependent_var, expl_var, method=ridge, lambdaList=lambdaList, alphaList = 1, lag=lag)
+error_ElasticNet <- TuningRollingWindowTuningPenalized(dependent_var, expl_var, method=elasticNet, lambdaList=lambdaList, alphaList = alphaList, lag=lag)
+error_AdaptiveLasso <- TuningRollingWindowTuningPenalized(dependent_var, expl_var, method=adaptiveLasso, lambdaList=lambdaList, alphaList = 1, lag=lag)
+
+error_PCA <- TuningRollingWindowFactorModels(dependent_var, explanatory_vars = expl_var, method = pca, kList=kList, lag=lag)
+error_SPCA <- TuningRollingWindowFactorModels(dependent_var, explanatory_vars = expl_var, method = spca, kList=kList, alphaList= c(0.0001, 0.001, 0.01), lag=lag)
+error_LAPC <- TuningRollingWindowFactorModels(dependent_var, explanatory_vars = expl_var, method = lapc, kList=kList, lag=lag)
+
+error_AR <- TuningAR(dependent_var, expl_var, lag=lag)
+error_RF <- TuningRF(dependent_var, expl_var, lag=lag)
+
+dependent_var = as.data.frame(dependent_var_RPI)
+dependent_var <- as.data.frame(dependent_var[121:(nrow(dependent_var)), ])
+yhatMatrix <- cbind(error_Lasso[[4]], error_PCA[[4]], error_AR[[2]], error_RF[[2]])
+
+error_Forecast_Combination_Lasso <- TuningRollingWindowForecastCombinations(dependent_var, yhatMatrix, method=lasso_forecomb, lambdaList = lambdaList)
+error_Forecast_Combination_Ridge <- TuningRollingWindowForecastCombinations(dependent_var, yhatMatrix, method=ridge_forecomb, lambdaList = lambdaList)
+error_Forecast_Combination_OLS <- TuningRollingWindowForecastCombinations(dependent_var, yhatMatrix, method=ols)
+error_Forecast_Combination_EQW <- TuningRollingWindowForecastCombinations(dependent_var, yhatMatrix, method=EqualWeights)
+error_Forecast_Combination_RF <- TuningRollingWindowForecastCombinations(dependent_var, yhatMatrix, method=RF_forecomb)
+
+print(paste("[", sqrt(sum(error_AR)/640), sqrt(sum(error_Lasso)/640), sqrt(sum(error_Ridge)/640), sqrt(sum(error_ElasticNet)/640), 
+            sqrt(sum(error_AdaptiveLasso)/640), sqrt(sum(error_PCA)/640), sqrt(sum(error_SPCA)/640), sqrt(sum(error_LAPC)/640),
+            sqrt(sum(error_RF)/640), sqrt(sum(error_Forecast_Combination_EQW)/520), sqrt(sum(error_Forecast_Combination_OLS)/520), sqrt(sum(error_Forecast_Combination_Lasso)/520), 
+            sqrt(sum(error_Forecast_Combination_Ridge)/520), sqrt(sum(error_Forecast_Combination_RF)/520), "]"))
+
+
+error_Lasso_dm <- error_Lasso_stat$MSE
+error_AR_dm <- error_AR_stat$MSE
+error_Ridge_dm <- error_Ridge_stat$MSE
+error_ElasticNet_dm <- error_ElasticNet_stat$MSE
+error_AdaptiveLasso_dm <- error_AdaptiveLasso_stat$MSE
+error_PCA_dm <- error_PCA$MSE
+error_SPCA_dm <- error_SPCA$MSE
+error_LAPC_dm <- error_LAPC$MSE
+error_FC_EQW_dm <- error_Forecast_Combination_EQW$MSE
+error_FC_OLS_dm <- error_Forecast_Combination_OLS$MSE
+error_FC_lasso_dm <- error_Forecast_Combination_Lasso$MSE
+error_FC_ridge_dm <- error_Forecast_Combination_Ridge$MSE
+error_FC_RF_dm <- error_Forecast_Combination_RF$MSE
+
+Diebold_Lasso <- dm.test(error_Lasso_dm, error_AR_dm, h=1)
+Diebold_Ridge <- dm.test(error_Ridge_dm, error_AR_dm, h=1)
+Diebold_ElasticNet <- dm.test(error_ElasticNet_dm, error_AR_dm, h=1)
+Diebold_AdaptiveLasso <- dm.test(error_AdaptiveLasso_dm, error_AR_dm, h=1)
+Diebold_PCA <- dm.test(error_PCA_dm, error_AR_dm, h=1)
+Diebold_SPCA <- dm.test(error_SPCA_dm, error_AR_dm, h=1)
+Diebold_LAPC <- dm.test(error_LAPC_dm, error_AR_dm, h=1)
+Diebold_RF <- dm.test(error_RF_dm, error_AR_dm, h=1)
+Diebold_FC_EQW <- dm.test(error_FC_EQW_dm, error_AR_dm, h=1)
+Diebold_FC_OLS <- dm.test(error_FC_OLS_dm, error_AR_dm, h=1)
+Diebold_FC_Lasso <- dm.test(error_FC_Lasso_dm, error_AR_dm, h=1)
+Diebold_FC_Ridge <- dm.test(error_FC_Ridge_dm, error_AR_dm, h=1)
+Diebold_FC_RF <- dm.test(error_FC_RF_dm, error_AR_dm, h=1)
+
+print(paste("[", 
+            "Lasso:", Diebold_Lasso$p.value, 
+            "Ridge:", Diebold_Ridge$p.value, 
+            "ElasticNet:", Diebold_ElasticNet$p.value, 
+            "AdaptiveLasso:", Diebold_AdaptiveLasso$p.value,
+            "PCA:", Diebold_PCA$p.value, 
+            "SPCA:", Diebold_SPCA$p.value, 
+            "LAPC:", Diebold_LAPC$p.value, 
+            "RF:", Diebold_RF$p.value, 
+            "FC_EQW:", Diebold_FC_EQW$p.value, 
+            "FC_OLS:", Diebold_FC_OLS$p.value, 
+            "FC_Lasso:", Diebold_FC_Lasso$p.value, 
+            "FC_Ridge:", Diebold_FC_Ridge$p.value, 
+            "FC_RF:", Diebold_FC_RF$p.value,
+            "]"))
+
+weights_FC_OLS <- error_Forecast_Combination_OLS$Weights
+weights_FC_Lasso <- Error_Forecast_Combination_Lasso$Weights
+weights_FC_Ridge <- Error_Forecast_Combination_Ridge$Weights
+weights_FC_EQW <- error_Forecast_Combination_EQW$Weights
+weights_FC_RF <- error_Forecast_Combination_RF$Weights
+
+percentages_FC_OLS <- determineInfluence(weights_FC_OLS)
+percentages_FC_EQW <- determineInfluence(weights_FC_EQW)
+percentages_FC_RF <- determineInfluence(weights_FC_RF)
+percentages_FC_Lasso <- determineInfluence(weights_FC_Lasso)
+percentages_FC_Ridge <- determineInfluence(weights_FC_Ridge)
+
+
+print("Forecast combination percentages")
+print(paste("[",
+            "FC_EQW:", percentages_FC_EQW,
+            "FC OLS:", percentages_FC_OLS,
+            "FC_Lasso:", percentages_FC_Lasso,
+            "FC_Ridge:", percentages_FC_Ridge,
+            "FC_RF:", percentages_FC_RF,
+            "]"))
+
+####################################################################
+#                                                                  #
+#               Code used to create CPIULFSL outputs               # 
+#                                                                  #
+####################################################################
+
+dependent_var = as.data.frame(dependent_var_CPIULFSL)
+expl_var = as.data.frame(expl_vars_CPIULFSL)
+lag <- best_lag_CPIULFSL
+
+
+error_Lasso <- TuningRollingWindowTuningPenalized(dependent_var, expl_var, method=lasso, lambdaList=lambdaList, alphaList = 1, lag=lag)
+error_Ridge <- TuningRollingWindowTuningPenalized(dependent_var, expl_var, method=ridge, lambdaList=lambdaList, alphaList = 1, lag=lag)
+error_ElasticNet <- TuningRollingWindowTuningPenalized(dependent_var, expl_var, method=elasticNet, lambdaList=lambdaList, alphaList = alphaList, lag=lag)
+error_AdaptiveLasso <- TuningRollingWindowTuningPenalized(dependent_var, expl_var, method=adaptiveLasso, lambdaList=lambdaList, alphaList = 1, lag=lag)
+
+error_PCA <- TuningRollingWindowFactorModels(dependent_var, explanatory_vars = expl_var, method = pca, kList=kList, lag=lag)
+error_SPCA <- TuningRollingWindowFactorModels(dependent_var, explanatory_vars = expl_var, method = spca, kList=kList, alphaList= c(0.0001, 0.001, 0.01), lag=lag)
+error_LAPC <- TuningRollingWindowFactorModels(dependent_var, explanatory_vars = expl_var, method = lapc, kList=kList, lag=lag)
+
+error_AR <- TuningAR(dependent_var, expl_var, lag=lag)
+error_RF <- TuningRF(dependent_var, expl_var, lag=lag)
+
+dependent_var = as.data.frame(dependent_var_RPI)
+dependent_var <- as.data.frame(dependent_var[121:(nrow(dependent_var)), ])
+yhatMatrix <- cbind(error_Lasso[[4]], error_PCA[[4]], error_AR[[2]], error_RF[[2]])
+
+error_Forecast_Combination_Lasso <- TuningRollingWindowForecastCombinations(dependent_var, yhatMatrix, method=lasso_forecomb, lambdaList = lambdaList)
+error_Forecast_Combination_Ridge <- TuningRollingWindowForecastCombinations(dependent_var, yhatMatrix, method=ridge_forecomb, lambdaList = lambdaList)
+error_Forecast_Combination_OLS <- TuningRollingWindowForecastCombinations(dependent_var, yhatMatrix, method=ols)
+error_Forecast_Combination_EQW <- TuningRollingWindowForecastCombinations(dependent_var, yhatMatrix, method=EqualWeights)
+error_Forecast_Combination_RF <- TuningRollingWindowForecastCombinations(dependent_var, yhatMatrix, method=RF_forecomb)
+
+print(paste("[", sqrt(sum(error_AR)/640), sqrt(sum(error_Lasso)/640), sqrt(sum(error_Ridge)/640), sqrt(sum(error_ElasticNet)/640), 
+            sqrt(sum(error_AdaptiveLasso)/640), sqrt(sum(error_PCA)/640), sqrt(sum(error_SPCA)/640), sqrt(sum(error_LAPC)/640),
+            sqrt(sum(error_RF)/640), sqrt(sum(error_Forecast_Combination_EQW)/520), sqrt(sum(error_Forecast_Combination_OLS)/520), sqrt(sum(error_Forecast_Combination_Lasso)/520), 
+            sqrt(sum(error_Forecast_Combination_Ridge)/520), sqrt(sum(error_Forecast_Combination_RF)/520), "]"))
+
+
+error_Lasso_dm <- error_Lasso_stat$MSE
+error_AR_dm <- error_AR_stat$MSE
+error_Ridge_dm <- error_Ridge_stat$MSE
+error_ElasticNet_dm <- error_ElasticNet_stat$MSE
+error_AdaptiveLasso_dm <- error_AdaptiveLasso_stat$MSE
+error_PCA_dm <- error_PCA$MSE
+error_SPCA_dm <- error_SPCA$MSE
+error_LAPC_dm <- error_LAPC$MSE
+error_FC_EQW_dm <- error_Forecast_Combination_EQW$MSE
+error_FC_OLS_dm <- error_Forecast_Combination_OLS$MSE
+error_FC_lasso_dm <- error_Forecast_Combination_Lasso$MSE
+error_FC_ridge_dm <- error_Forecast_Combination_Ridge$MSE
+error_FC_RF_dm <- error_Forecast_Combination_RF$MSE
+
+Diebold_Lasso <- dm.test(error_Lasso_dm, error_AR_dm, h=1)
+Diebold_Ridge <- dm.test(error_Ridge_dm, error_AR_dm, h=1)
+Diebold_ElasticNet <- dm.test(error_ElasticNet_dm, error_AR_dm, h=1)
+Diebold_AdaptiveLasso <- dm.test(error_AdaptiveLasso_dm, error_AR_dm, h=1)
+Diebold_PCA <- dm.test(error_PCA_dm, error_AR_dm, h=1)
+Diebold_SPCA <- dm.test(error_SPCA_dm, error_AR_dm, h=1)
+Diebold_LAPC <- dm.test(error_LAPC_dm, error_AR_dm, h=1)
+Diebold_RF <- dm.test(error_RF_dm, error_AR_dm, h=1)
+Diebold_FC_EQW <- dm.test(error_FC_EQW_dm, error_AR_dm, h=1)
+Diebold_FC_OLS <- dm.test(error_FC_OLS_dm, error_AR_dm, h=1)
+Diebold_FC_Lasso <- dm.test(error_FC_Lasso_dm, error_AR_dm, h=1)
+Diebold_FC_Ridge <- dm.test(error_FC_Ridge_dm, error_AR_dm, h=1)
+Diebold_FC_RF <- dm.test(error_FC_RF_dm, error_AR_dm, h=1)
+
+print(paste("[", 
+            "Lasso:", Diebold_Lasso$p.value, 
+            "Ridge:", Diebold_Ridge$p.value, 
+            "ElasticNet:", Diebold_ElasticNet$p.value, 
+            "AdaptiveLasso:", Diebold_AdaptiveLasso$p.value,
+            "PCA:", Diebold_PCA$p.value, 
+            "SPCA:", Diebold_SPCA$p.value, 
+            "LAPC:", Diebold_LAPC$p.value, 
+            "RF:", Diebold_RF$p.value, 
+            "FC_EQW:", Diebold_FC_EQW$p.value, 
+            "FC_OLS:", Diebold_FC_OLS$p.value, 
+            "FC_Lasso:", Diebold_FC_Lasso$p.value, 
+            "FC_Ridge:", Diebold_FC_Ridge$p.value, 
+            "FC_RF:", Diebold_FC_RF$p.value,
+            "]"))
+
+weights_FC_OLS <- error_Forecast_Combination_OLS$Weights
+weights_FC_Lasso <- Error_Forecast_Combination_Lasso$Weights
+weights_FC_Ridge <- Error_Forecast_Combination_Ridge$Weights
+weights_FC_EQW <- error_Forecast_Combination_EQW$Weights
+weights_FC_RF <- error_Forecast_Combination_RF$Weights
+
+percentages_FC_OLS <- determineInfluence(weights_FC_OLS)
+percentages_FC_EQW <- determineInfluence(weights_FC_EQW)
+percentages_FC_RF <- determineInfluence(weights_FC_RF)
+percentages_FC_Lasso <- determineInfluence(weights_FC_Lasso)
+percentages_FC_Ridge <- determineInfluence(weights_FC_Ridge)
+
+
+print("Forecast combination percentages")
+print(paste("[",
+            "FC_EQW:", percentages_FC_EQW,
+            "FC OLS:", percentages_FC_OLS,
+            "FC_Lasso:", percentages_FC_Lasso,
+            "FC_Ridge:", percentages_FC_Ridge,
+            "FC_RF:", percentages_FC_RF,
+            "]"))
+
+##################################################################
+#                                                                #
+#               Code used to create PAYEMS outputs               # 
+#                                                                #
+##################################################################
+
+dependent_var = as.data.frame(dependent_var_PAYEMS)
+expl_var = as.data.frame(expl_vars_PAYEMS)
+lag <- best_lag_PAYEMS
+
+
+error_Lasso <- TuningRollingWindowTuningPenalized(dependent_var, expl_var, method=lasso, lambdaList=lambdaList, alphaList = 1, lag=lag)
+error_Ridge <- TuningRollingWindowTuningPenalized(dependent_var, expl_var, method=ridge, lambdaList=lambdaList, alphaList = 1, lag=lag)
+error_ElasticNet <- TuningRollingWindowTuningPenalized(dependent_var, expl_var, method=elasticNet, lambdaList=lambdaList, alphaList = alphaList, lag=lag)
+error_AdaptiveLasso <- TuningRollingWindowTuningPenalized(dependent_var, expl_var, method=adaptiveLasso, lambdaList=lambdaList, alphaList = 1, lag=lag)
+
+error_PCA <- TuningRollingWindowFactorModels(dependent_var, explanatory_vars = expl_var, method = pca, kList=kList, lag=lag)
+error_SPCA <- TuningRollingWindowFactorModels(dependent_var, explanatory_vars = expl_var, method = spca, kList=kList, alphaList= c(0.0001, 0.001, 0.01), lag=lag)
+error_LAPC <- TuningRollingWindowFactorModels(dependent_var, explanatory_vars = expl_var, method = lapc, kList=kList, lag=lag)
+
+error_AR <- TuningAR(dependent_var, expl_var, lag=lag)
+error_RF <- TuningRF(dependent_var, expl_var, lag=lag)
+
+dependent_var = as.data.frame(dependent_var_RPI)
+dependent_var <- as.data.frame(dependent_var[121:(nrow(dependent_var)), ])
+yhatMatrix <- cbind(error_Lasso[[4]], error_PCA[[4]], error_AR[[2]], error_RF[[2]])
+
+error_Forecast_Combination_Lasso <- TuningRollingWindowForecastCombinations(dependent_var, yhatMatrix, method=lasso_forecomb, lambdaList = lambdaList)
+error_Forecast_Combination_Ridge <- TuningRollingWindowForecastCombinations(dependent_var, yhatMatrix, method=ridge_forecomb, lambdaList = lambdaList)
+error_Forecast_Combination_OLS <- TuningRollingWindowForecastCombinations(dependent_var, yhatMatrix, method=ols)
+error_Forecast_Combination_EQW <- TuningRollingWindowForecastCombinations(dependent_var, yhatMatrix, method=EqualWeights)
+error_Forecast_Combination_RF <- TuningRollingWindowForecastCombinations(dependent_var, yhatMatrix, method=RF_forecomb)
+
+print(paste("[", sqrt(sum(error_AR)/640), sqrt(sum(error_Lasso)/640), sqrt(sum(error_Ridge)/640), sqrt(sum(error_ElasticNet)/640), 
+            sqrt(sum(error_AdaptiveLasso)/640), sqrt(sum(error_PCA)/640), sqrt(sum(error_SPCA)/640), sqrt(sum(error_LAPC)/640),
+            sqrt(sum(error_RF)/640), sqrt(sum(error_Forecast_Combination_EQW)/520), sqrt(sum(error_Forecast_Combination_OLS)/520), sqrt(sum(error_Forecast_Combination_Lasso)/520), 
+            sqrt(sum(error_Forecast_Combination_Ridge)/520), sqrt(sum(error_Forecast_Combination_RF)/520), "]"))
+
+
+error_Lasso_dm <- error_Lasso_stat$MSE
+error_AR_dm <- error_AR_stat$MSE
+error_Ridge_dm <- error_Ridge_stat$MSE
+error_ElasticNet_dm <- error_ElasticNet_stat$MSE
+error_AdaptiveLasso_dm <- error_AdaptiveLasso_stat$MSE
+error_PCA_dm <- error_PCA$MSE
+error_SPCA_dm <- error_SPCA$MSE
+error_LAPC_dm <- error_LAPC$MSE
+error_FC_EQW_dm <- error_Forecast_Combination_EQW$MSE
+error_FC_OLS_dm <- error_Forecast_Combination_OLS$MSE
+error_FC_lasso_dm <- error_Forecast_Combination_Lasso$MSE
+error_FC_ridge_dm <- error_Forecast_Combination_Ridge$MSE
+error_FC_RF_dm <- error_Forecast_Combination_RF$MSE
+
+Diebold_Lasso <- dm.test(error_Lasso_dm, error_AR_dm, h=1)
+Diebold_Ridge <- dm.test(error_Ridge_dm, error_AR_dm, h=1)
+Diebold_ElasticNet <- dm.test(error_ElasticNet_dm, error_AR_dm, h=1)
+Diebold_AdaptiveLasso <- dm.test(error_AdaptiveLasso_dm, error_AR_dm, h=1)
+Diebold_PCA <- dm.test(error_PCA_dm, error_AR_dm, h=1)
+Diebold_SPCA <- dm.test(error_SPCA_dm, error_AR_dm, h=1)
+Diebold_LAPC <- dm.test(error_LAPC_dm, error_AR_dm, h=1)
+Diebold_RF <- dm.test(error_RF_dm, error_AR_dm, h=1)
+Diebold_FC_EQW <- dm.test(error_FC_EQW_dm, error_AR_dm, h=1)
+Diebold_FC_OLS <- dm.test(error_FC_OLS_dm, error_AR_dm, h=1)
+Diebold_FC_Lasso <- dm.test(error_FC_Lasso_dm, error_AR_dm, h=1)
+Diebold_FC_Ridge <- dm.test(error_FC_Ridge_dm, error_AR_dm, h=1)
+Diebold_FC_RF <- dm.test(error_FC_RF_dm, error_AR_dm, h=1)
+
+print(paste("[", 
+            "Lasso:", Diebold_Lasso$p.value, 
+            "Ridge:", Diebold_Ridge$p.value, 
+            "ElasticNet:", Diebold_ElasticNet$p.value, 
+            "AdaptiveLasso:", Diebold_AdaptiveLasso$p.value,
+            "PCA:", Diebold_PCA$p.value, 
+            "SPCA:", Diebold_SPCA$p.value, 
+            "LAPC:", Diebold_LAPC$p.value, 
+            "RF:", Diebold_RF$p.value, 
+            "FC_EQW:", Diebold_FC_EQW$p.value, 
+            "FC_OLS:", Diebold_FC_OLS$p.value, 
+            "FC_Lasso:", Diebold_FC_Lasso$p.value, 
+            "FC_Ridge:", Diebold_FC_Ridge$p.value, 
+            "FC_RF:", Diebold_FC_RF$p.value,
+            "]"))
+
+weights_FC_OLS <- error_Forecast_Combination_OLS$Weights
+weights_FC_Lasso <- Error_Forecast_Combination_Lasso$Weights
+weights_FC_Ridge <- Error_Forecast_Combination_Ridge$Weights
+weights_FC_EQW <- error_Forecast_Combination_EQW$Weights
+weights_FC_RF <- error_Forecast_Combination_RF$Weights
+
+percentages_FC_OLS <- determineInfluence(weights_FC_OLS)
+percentages_FC_EQW <- determineInfluence(weights_FC_EQW)
+percentages_FC_RF <- determineInfluence(weights_FC_RF)
+percentages_FC_Lasso <- determineInfluence(weights_FC_Lasso)
+percentages_FC_Ridge <- determineInfluence(weights_FC_Ridge)
+
+
+print("Forecast combination percentages")
+print(paste("[",
+            "FC_EQW:", percentages_FC_EQW,
+            "FC OLS:", percentages_FC_OLS,
+            "FC_Lasso:", percentages_FC_Lasso,
+            "FC_Ridge:", percentages_FC_Ridge,
+            "FC_RF:", percentages_FC_RF,
+            "]"))
+
+#################################################################
+#                                                               #
+#               Code used to create PCEPI outputs               # 
+#                                                               #
+#################################################################
+
+dependent_var = as.data.frame(dependent_var_PCEPI)
+expl_var = as.data.frame(expl_vars_PCEPI)
+lag <- best_lag_PCEPI
+
+
+error_Lasso <- TuningRollingWindowTuningPenalized(dependent_var, expl_var, method=lasso, lambdaList=lambdaList, alphaList = 1, lag=lag)
+error_Ridge <- TuningRollingWindowTuningPenalized(dependent_var, expl_var, method=ridge, lambdaList=lambdaList, alphaList = 1, lag=lag)
+error_ElasticNet <- TuningRollingWindowTuningPenalized(dependent_var, expl_var, method=elasticNet, lambdaList=lambdaList, alphaList = alphaList, lag=lag)
+error_AdaptiveLasso <- TuningRollingWindowTuningPenalized(dependent_var, expl_var, method=adaptiveLasso, lambdaList=lambdaList, alphaList = 1, lag=lag)
+
+error_PCA <- TuningRollingWindowFactorModels(dependent_var, explanatory_vars = expl_var, method = pca, kList=kList, lag=lag)
+error_SPCA <- TuningRollingWindowFactorModels(dependent_var, explanatory_vars = expl_var, method = spca, kList=kList, alphaList= c(0.0001, 0.001, 0.01), lag=lag)
+error_LAPC <- TuningRollingWindowFactorModels(dependent_var, explanatory_vars = expl_var, method = lapc, kList=kList, lag=lag)
+
+error_AR <- TuningAR(dependent_var, expl_var, lag=lag)
+error_RF <- TuningRF(dependent_var, expl_var, lag=lag)
+
+dependent_var = as.data.frame(dependent_var_RPI)
+dependent_var <- as.data.frame(dependent_var[121:(nrow(dependent_var)), ])
+yhatMatrix <- cbind(error_Lasso[[4]], error_PCA[[4]], error_AR[[2]], error_RF[[2]])
+
+error_Forecast_Combination_Lasso <- TuningRollingWindowForecastCombinations(dependent_var, yhatMatrix, method=lasso_forecomb, lambdaList = lambdaList)
+error_Forecast_Combination_Ridge <- TuningRollingWindowForecastCombinations(dependent_var, yhatMatrix, method=ridge_forecomb, lambdaList = lambdaList)
+error_Forecast_Combination_OLS <- TuningRollingWindowForecastCombinations(dependent_var, yhatMatrix, method=ols)
+error_Forecast_Combination_EQW <- TuningRollingWindowForecastCombinations(dependent_var, yhatMatrix, method=EqualWeights)
+error_Forecast_Combination_RF <- TuningRollingWindowForecastCombinations(dependent_var, yhatMatrix, method=RF_forecomb)
+
+print(paste("[", sqrt(sum(error_AR)/640), sqrt(sum(error_Lasso)/640), sqrt(sum(error_Ridge)/640), sqrt(sum(error_ElasticNet)/640), 
+            sqrt(sum(error_AdaptiveLasso)/640), sqrt(sum(error_PCA)/640), sqrt(sum(error_SPCA)/640), sqrt(sum(error_LAPC)/640),
+            sqrt(sum(error_RF)/640), sqrt(sum(error_Forecast_Combination_EQW)/520), sqrt(sum(error_Forecast_Combination_OLS)/520), sqrt(sum(error_Forecast_Combination_Lasso)/520), 
+            sqrt(sum(error_Forecast_Combination_Ridge)/520), sqrt(sum(error_Forecast_Combination_RF)/520), "]"))
+
+
+error_Lasso_dm <- error_Lasso_stat$MSE
+error_AR_dm <- error_AR_stat$MSE
+error_Ridge_dm <- error_Ridge_stat$MSE
+error_ElasticNet_dm <- error_ElasticNet_stat$MSE
+error_AdaptiveLasso_dm <- error_AdaptiveLasso_stat$MSE
+error_PCA_dm <- error_PCA$MSE
+error_SPCA_dm <- error_SPCA$MSE
+error_LAPC_dm <- error_LAPC$MSE
+error_FC_EQW_dm <- error_Forecast_Combination_EQW$MSE
+error_FC_OLS_dm <- error_Forecast_Combination_OLS$MSE
+error_FC_lasso_dm <- error_Forecast_Combination_Lasso$MSE
+error_FC_ridge_dm <- error_Forecast_Combination_Ridge$MSE
+error_FC_RF_dm <- error_Forecast_Combination_RF$MSE
+
+Diebold_Lasso <- dm.test(error_Lasso_dm, error_AR_dm, h=1)
+Diebold_Ridge <- dm.test(error_Ridge_dm, error_AR_dm, h=1)
+Diebold_ElasticNet <- dm.test(error_ElasticNet_dm, error_AR_dm, h=1)
+Diebold_AdaptiveLasso <- dm.test(error_AdaptiveLasso_dm, error_AR_dm, h=1)
+Diebold_PCA <- dm.test(error_PCA_dm, error_AR_dm, h=1)
+Diebold_SPCA <- dm.test(error_SPCA_dm, error_AR_dm, h=1)
+Diebold_LAPC <- dm.test(error_LAPC_dm, error_AR_dm, h=1)
+Diebold_RF <- dm.test(error_RF_dm, error_AR_dm, h=1)
+Diebold_FC_EQW <- dm.test(error_FC_EQW_dm, error_AR_dm, h=1)
+Diebold_FC_OLS <- dm.test(error_FC_OLS_dm, error_AR_dm, h=1)
+Diebold_FC_Lasso <- dm.test(error_FC_Lasso_dm, error_AR_dm, h=1)
+Diebold_FC_Ridge <- dm.test(error_FC_Ridge_dm, error_AR_dm, h=1)
+Diebold_FC_RF <- dm.test(error_FC_RF_dm, error_AR_dm, h=1)
+
+print(paste("[", 
+            "Lasso:", Diebold_Lasso$p.value, 
+            "Ridge:", Diebold_Ridge$p.value, 
+            "ElasticNet:", Diebold_ElasticNet$p.value, 
+            "AdaptiveLasso:", Diebold_AdaptiveLasso$p.value,
+            "PCA:", Diebold_PCA$p.value, 
+            "SPCA:", Diebold_SPCA$p.value, 
+            "LAPC:", Diebold_LAPC$p.value, 
+            "RF:", Diebold_RF$p.value, 
+            "FC_EQW:", Diebold_FC_EQW$p.value, 
+            "FC_OLS:", Diebold_FC_OLS$p.value, 
+            "FC_Lasso:", Diebold_FC_Lasso$p.value, 
+            "FC_Ridge:", Diebold_FC_Ridge$p.value, 
+            "FC_RF:", Diebold_FC_RF$p.value,
+            "]"))
+
+weights_FC_OLS <- error_Forecast_Combination_OLS$Weights
+weights_FC_Lasso <- Error_Forecast_Combination_Lasso$Weights
+weights_FC_Ridge <- Error_Forecast_Combination_Ridge$Weights
+weights_FC_EQW <- error_Forecast_Combination_EQW$Weights
+weights_FC_RF <- error_Forecast_Combination_RF$Weights
+
+percentages_FC_OLS <- determineInfluence(weights_FC_OLS)
+percentages_FC_EQW <- determineInfluence(weights_FC_EQW)
+percentages_FC_RF <- determineInfluence(weights_FC_RF)
+percentages_FC_Lasso <- determineInfluence(weights_FC_Lasso)
+percentages_FC_Ridge <- determineInfluence(weights_FC_Ridge)
+
+
+print("Forecast combination percentages")
+print(paste("[",
+            "FC_EQW:", percentages_FC_EQW,
+            "FC OLS:", percentages_FC_OLS,
+            "FC_Lasso:", percentages_FC_Lasso,
+            "FC_Ridge:", percentages_FC_Ridge,
+            "FC_RF:", percentages_FC_RF,
+            "]"))
+=======
+
+>>>>>>> 8e617ff8591411a406729d51f9c64a9063838d7b
 
 ######################################################################
 #                                                                    #
@@ -296,9 +1069,77 @@ Diebold_SPCA <- dm.test(error_SPCA_nonstat, error_AR_nonstat, h=1)
 Diebold_LAPC <- dm.test(error_LAPC_nonstat, error_AR_nonstat, h=1)
 
 
+<<<<<<< HEAD
+error_Lasso_dm <- error_Lasso_stat$MSE
+error_AR_dm <- error_AR_stat$MSE
+error_Ridge_dm <- error_Ridge_stat$MSE
+error_ElasticNet_dm <- error_ElasticNet_stat$MSE
+error_AdaptiveLasso_dm <- error_AdaptiveLasso_stat$MSE
+error_PCA_dm <- error_PCA$MSE
+error_SPCA_dm <- error_SPCA$MSE
+error_LAPC_dm <- error_LAPC$MSE
+error_FC_EQW_dm <- error_Forecast_Combination_EQW$MSE
+error_FC_OLS_dm <- error_Forecast_Combination_OLS$MSE
+error_FC_lasso_dm <- error_Forecast_Combination_Lasso$MSE
+error_FC_ridge_dm <- error_Forecast_Combination_Ridge$MSE
+error_FC_RF_dm <- error_Forecast_Combination_RF$MSE
+
+Diebold_Lasso <- dm.test(error_Lasso_dm, error_AR_dm, h=1)
+Diebold_Ridge <- dm.test(error_Ridge_dm, error_AR_dm, h=1)
+Diebold_ElasticNet <- dm.test(error_ElasticNet_dm, error_AR_dm, h=1)
+Diebold_AdaptiveLasso <- dm.test(error_AdaptiveLasso_dm, error_AR_dm, h=1)
+Diebold_PCA <- dm.test(error_PCA_dm, error_AR_dm, h=1)
+Diebold_SPCA <- dm.test(error_SPCA_dm, error_AR_dm, h=1)
+Diebold_LAPC <- dm.test(error_LAPC_dm, error_AR_dm, h=1)
+Diebold_RF <- dm.test(error_RF_dm, error_AR_dm, h=1)
+Diebold_FC_EQW <- dm.test(error_FC_EQW_dm, error_AR_dm, h=1)
+Diebold_FC_OLS <- dm.test(error_FC_OLS_dm, error_AR_dm, h=1)
+Diebold_FC_Lasso <- dm.test(error_FC_Lasso_dm, error_AR_dm, h=1)
+Diebold_FC_Ridge <- dm.test(error_FC_Ridge_dm, error_AR_dm, h=1)
+Diebold_FC_RF <- dm.test(error_FC_RF_dm, error_AR_dm, h=1)
+
+print(paste("[", 
+            "Lasso:", Diebold_Lasso$p.value, 
+            "Ridge:", Diebold_Ridge$p.value, 
+            "ElasticNet:", Diebold_ElasticNet$p.value, 
+            "AdaptiveLasso:", Diebold_AdaptiveLasso$p.value,
+            "PCA:", Diebold_PCA$p.value, 
+            "SPCA:", Diebold_SPCA$p.value, 
+            "LAPC:", Diebold_LAPC$p.value, 
+            "RF:", Diebold_RF$p.value, 
+            "FC_EQW:", Diebold_FC_EQW$p.value, 
+            "FC_OLS:", Diebold_FC_OLS$p.value, 
+            "FC_Lasso:", Diebold_FC_Lasso$p.value, 
+            "FC_Ridge:", Diebold_FC_Ridge$p.value, 
+            "FC_RF:", Diebold_FC_RF$p.value,
+            "]"))
+
+weights_FC_OLS <- error_Forecast_Combination_OLS$Weights
+weights_FC_Lasso <- Error_Forecast_Combination_Lasso$Weights
+weights_FC_Ridge <- Error_Forecast_Combination_Ridge$Weights
+weights_FC_EQW <- error_Forecast_Combination_EQW$Weights
+weights_FC_RF <- error_Forecast_Combination_RF$Weights
+
+percentages_FC_OLS <- determineInfluence(weights_FC_OLS)
+percentages_FC_EQW <- determineInfluence(weights_FC_EQW)
+percentages_FC_RF <- determineInfluence(weights_FC_RF)
+percentages_FC_Lasso <- determineInfluence(weights_FC_Lasso)
+percentages_FC_Ridge <- determineInfluence(weights_FC_Ridge)
+
+
+print("Forecast combination percentages")
+print(paste("[",
+            "FC_EQW:", percentages_FC_EQW,
+            "FC OLS:", percentages_FC_OLS,
+            "FC_Lasso:", percentages_FC_Lasso,
+            "FC_Ridge:", percentages_FC_Ridge,
+            "FC_RF:", percentages_FC_RF,
+            "]"))
+=======
 print(Diebold_Lasso)
 print(Diebold_Ridge)
 print(Diebold_ElasticNet)
 print(Diebold_PCA)
 print(Diebold_SPCA)
 print(Diebold_LAPC)
+>>>>>>> 8e617ff8591411a406729d51f9c64a9063838d7b
